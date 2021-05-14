@@ -1,0 +1,305 @@
+---
+title: "ECON 6731 Game Control Code"
+author: "Cole R. Wagner"
+date: "4/20/2021"
+output: html_document
+---
+
+```{r}
+ncaa <- read.csv("~/R/NCAAB Analysis/ncaa_pbp_16_18.csv")
+
+ncaab <- ncaa %>%
+  filter(shot_made == "true", home_division_alias == "D1", away_division_alias == "D1") %>%
+  arrange(elapsed_time_sec) %>%
+  mutate(home_scored = case_when(team_id == home_id ~ 1,
+                                        team_id == away_id ~ 0),
+         home_points_scored = case_when(home_scored == 1 ~ as.numeric(points_scored),
+                                        home_scored == 0 ~ 0),
+         away_points_scored = case_when(home_scored == 0 ~ as.numeric(points_scored),
+                                        home_scored == 1 ~ 0),
+         ncaa_tournament = case_when(tournament == "" ~ 0,
+                                     tournament == "Conference" ~ 0,
+                                     tournament == "NCAA" ~ 1))
+
+nested_ncaab <- ncaab %>%
+  group_by(game_id) %>%
+  nest()
+```
+
+
+
+```{r}
+mistakes <- ncaab %>%
+  filter(elapsed_time_sec < 0)
+
+mistake_games <- nested_ncaab %>%
+  filter(game_id == "d9711715-1f38-49ef-a4b6-d87ea65cbfa1" |
+         game_id == "5a93cda2-46fd-48ad-862c-4d716e2e9f69" |
+         game_id == "2a998764-fc79-4be2-9937-e6c720ab15d0" |
+         game_id == "99ac0cdb-ad8c-4c97-b0c4-9027ebe095fe" |
+         game_id == "052abddf-adb0-498e-8460-fb0a866d9c1c" |
+         game_id == "27dcb307-0308-4f0e-b512-2c3a43cd3be7" |
+         game_id == "73e48377-adc1-42e9-b227-5d4a7eae24c5" |
+         game_id == "050a2017-a273-4190-98cf-05e41f4b078c")
+
+### UMKC vs LOU: [1] <- 50 
+### IOWA vs MICH:[1] <- 65 
+### IOWA vs MSU: [1] <- 10 
+### CP vs STAN: [1] <- 5 & [2] <- 5
+### MIZZ vs LSU: [1] <- 26
+### UCD vs STAN: [1] <- 16
+### IND vs MSU: [1] <- 21
+### MINN vs MSU: [1] <- 23
+
+ncaab_tbf <- ncaab %>%
+  filter(game_id != "d9711715-1f38-49ef-a4b6-d87ea65cbfa1" &
+         game_id != "5a93cda2-46fd-48ad-862c-4d716e2e9f69" &
+         game_id != "2a998764-fc79-4be2-9937-e6c720ab15d0" &
+         game_id != "99ac0cdb-ad8c-4c97-b0c4-9027ebe095fe" &
+         game_id != "052abddf-adb0-498e-8460-fb0a866d9c1c" &
+         game_id != "27dcb307-0308-4f0e-b512-2c3a43cd3be7" &
+         game_id != "73e48377-adc1-42e9-b227-5d4a7eae24c5" &
+         game_id != "050a2017-a273-4190-98cf-05e41f4b078c")
+
+mistake_games[[2]][[1]]$elapsed_time_sec[1] <- 50
+mistake_games[[2]][[2]]$elapsed_time_sec[1] <- 65
+mistake_games[[2]][[3]]$elapsed_time_sec[1] <- 10
+mistake_games[[2]][[4]]$elapsed_time_sec[1] <- 5
+mistake_games[[2]][[4]]$elapsed_time_sec[2] <- 5
+mistake_games[[2]][[5]]$elapsed_time_sec[1] <- 26
+mistake_games[[2]][[6]]$elapsed_time_sec[1] <- 16
+mistake_games[[2]][[7]]$elapsed_time_sec[1] <- 21
+mistake_games[[2]][[8]]$elapsed_time_sec[1] <- 23
+
+fixed_games <- mistake_games %>%
+  unnest()
+
+ncaa_data <- rbind(ncaab_tbf, fixed_games)
+
+nested_ncaa <- ncaa_data %>%
+  group_by(game_id) %>%
+  nest()
+
+rm(mistake_games,
+   mistakes,
+   ncaab_tbf,
+   fixed_games)
+```
+
+
+
+```{r}
+home_score_function <- function(n, hps){
+  home_score <- c()
+
+  for(i in 1:n){
+    home_score[i] <- sum(hps[1:i])
+  }
+  return(home_score)
+}
+
+away_score_function <- function(n, aps){
+  away_score <- c()
+
+  for(i in 1:n){
+    away_score[i] <- sum(aps[1:i])
+  }
+  return(away_score)
+}
+
+nested_ncaa_1 <- nested_ncaa %>%
+  mutate(n_makes = map_dbl(.x = data, .f = ~length(.x$home_points_scored)),
+         data = map(.x = data, .f = ~ mutate(.x, home_score = home_score_function(n = n_makes, hps = .x$home_points_scored))),
+         data = map(.x = data, .f = ~ mutate(.x, away_score = away_score_function(n = n_makes, aps = .x$away_points_scored))),
+         data = map(.x = data, .f = ~ mutate(.x, home_score_diff = (.x$home_score - .x$away_score))))
+
+
+elapsed_time_function <- function(n, elapsed){
+  elapsed_last_score <- c()
+  elapsed[length(elapsed) + 1] <- if(elapsed[length(elapsed)] <= 2400){
+    2400
+  } else if(elapsed[length(elapsed)] > 2400 & elapsed[length(elapsed)] <= 2700){
+    2700
+  } else if(elapsed[length(elapsed)] > 2700 & elapsed[length(elapsed)] <= 3000){
+    3000
+  } else if(elapsed[length(elapsed)] > 3000 & elapsed[length(elapsed)] <= 3300){
+    3300
+  } else if(elapsed[length(elapsed)] > 3300 & elapsed[length(elapsed)] <= 3600){
+    3600
+  } else if(elapsed[length(elapsed)] > 3600 & elapsed[length(elapsed)] <= 3900){
+    3900
+  } else if(elapsed[length(elapsed)] > 3900 & elapsed[length(elapsed)] <= 4200){
+    4200
+  } else{
+    4500
+  }
+
+  for(i in 1:n){
+    elapsed_last_score[i] <- elapsed[i + 1] - elapsed[i]
+  }
+  return(elapsed_last_score)
+}
+
+nested_ncaa_2 <- nested_ncaa_1 %>%
+  mutate(data = map(.x = data, .f = ~ mutate(.x, sec_last_score = elapsed_time_function(n = n_makes, elapsed = .x$elapsed_time_sec))),
+         home_game_control = map_dbl(.x = data, .f = ~ sum(.x$sec_last_score * .x$home_score_diff)),
+         away_game_control = map_dbl(.x = data, .f = ~ -1 * sum(.x$sec_last_score * .x$home_score_diff)))
+
+
+ncaa_home <- nested_ncaa_2 %>%
+  unnest() %>%
+  group_by(home_id, game_id) %>%
+  nest()
+
+ncaa_away <- nested_ncaa_2 %>%
+  unnest() %>%
+  group_by(away_id, game_id) %>%
+  nest()
+
+gc_home <- ncaa_home %>%
+  mutate(home_team = map_chr(.x = data, .f = ~ as.character(unique(.x$home_market))),
+         home_game_control = map_dbl(.x = data, .f = ~ mean(.x$home_game_control)),
+         season = map_dbl(.x = data, .f = ~ mean(.x$season)),
+         neutral_site = map_chr(.x = data, .f = ~ as.character(unique(.x$neutral_site))),
+         ncaa_tournament = map_dbl(.x = data, .f = ~ mean(.x$ncaa_tournament)))
+
+gc_away <- ncaa_away %>%
+  mutate(away_team = map_chr(.x = data, .f = ~ as.character(unique(.x$away_market))),
+         away_game_control = map_dbl(.x = data, .f = ~ mean(.x$away_game_control)),
+         season = map_dbl(.x = data, .f = ~ mean(.x$season)),
+         neutral_site = map_chr(.x = data, .f = ~ as.character(unique(.x$neutral_site))),
+         ncaa_tournament = map_dbl(.x = data, .f = ~ mean(.x$ncaa_tournament)))
+```
+
+
+
+```{r}
+gc_away_df <- gc_away %>%
+  select(-data)
+
+gc_home_df <- gc_home %>%
+  select(-data)
+
+gc_stats <- cbind(gc_home_df, gc_away_df)
+
+rm(gc_home_df, gc_away_df)
+
+gc_stats <- gc_stats %>%
+  select(-season...12, -neutral_site...13, -ncaa_tournament...14, -game_id...8) %>%
+  rename(game_id = game_id...1,
+         season = season...5,
+         neutral_site = neutral_site...6,
+         ncaa_tournament = ncaa_tournament...7)
+```
+
+
+```{r}
+library(glmnet)
+```
+
+```{r}
+for(i in 1:length(gc_stats$neutral_site)){
+    gc_stats$neutral_site[i] <- if(gc_stats$neutral_site[i] == "true"){
+      0
+    } else if(gc_stats$neutral_site[i] == "false"){
+      1
+    } else{
+      NA_real_
+    }
+  }
+
+gc_2017 <- gc_stats %>%
+  filter(season == 2017, ncaa_tournament == 0)
+
+teams_in_2017 <- c(gc_2017$home_team, gc_2017$away_team)
+teams_2017 <- unique(teams_in_2017)
+
+game_dummy_function <- function(ht, at, teams){
+  home_team <- ht
+  away_team <- at
+  dummies <- c()
+  
+  for(i in 1:length(teams)){
+    dummies[i] <- if(teams[i] == ht){
+      1
+    } else if(teams[i] == at){
+      -1
+    } else{
+      0
+    }
+  }
+  return(dummies)
+}
+
+all_dummies <- c()
+
+for(i in 1:length(gc_2017$game_id)){
+  dummies <- game_dummy_function(ht = gc_2017$home_team[i], at = gc_2017$away_team[i], teams = teams_2017)
+  all_dummies <- rbind(all_dummies, dummies)
+}
+
+hca_2017 <- as.numeric(gc_2017$neutral_site)
+
+x_2017 <- cbind(all_dummies, hca_2017)
+
+colnames(x_2017) <- c(teams_2017, "hca_2017")
+
+y_2017 <- gc_2017$home_game_control
+```
+
+```{r}
+lambdas <- 10 ^ seq(from = 10, to = -10, by = -0.01)
+
+model <- cv.glmnet(x = x_2017, y = y_2017, alpha = 0, lambda = lambdas)
+
+opt_lambda <- model$lambda.min
+
+model <- glmnet(x = x_2017, y = y_2017, alpha = 0, lambda = opt_lambda)
+
+ratings_2017 <- model[["beta"]] + model[["a0"]]
+
+teams_2017[length(teams_2017) + 1] <- NA_character_
+
+ratings_2017 <- cbind(teams_2017, as.data.frame(as.matrix(ratings_2017)))
+```
+
+
+```{r}
+library(readxl)
+EFF_2017 <- read_excel("C:/Users/wagne/OneDrive/Documents/R/NCAAB Analysis/2018_EFF_PACE_STATS.xlsx")
+EFF_2016 <- read_excel("C:/Users/wagne/OneDrive/Documents/R/NCAAB Analysis/2017_EFF_PACE_STATS.xlsx")
+```
+
+```{r}
+EFF_2017 <- EFF_2017 %>%
+  arrange(Team)
+
+EFF_2016 <- EFF_2016 %>%
+  arrange(Team)
+
+tourney_teams_2017 <- EFF_2017$Team
+tourney_teams_2016 <- EFF_2016$Team
+
+tourney_ratings_2017 <- ratings_2017 %>%
+  filter(teams_2017 %in% tourney_teams_2017) %>%
+  arrange(teams_2017) %>%
+  mutate(year = 2018)
+
+tourney_ratings_2016 <- ratings_2016 %>%
+  filter(teams_2016 %in% tourney_teams_2016) %>%
+  arrange(teams_2016) %>%
+  mutate(year = 2017)
+
+tourney_ratings_2017 <- cbind(tourney_ratings_2017, EFF_2017$OEFF, EFF_2017$DEFF, EFF_2017$PACE)
+colnames(tourney_ratings_2017) <- c("team", "game_control", "year", "adj_off_eff", "adj_def_eff", "adj_pace")
+
+tourney_ratings_2016 <- cbind(tourney_ratings_2016, EFF_2016$OEFF, EFF_2016$DEFF, EFF_2016$PACE)
+colnames(tourney_ratings_2016) <- c("team", "game_control", "year", "adj_off_eff", "adj_def_eff", "adj_pace")
+
+tourney_ratings <- rbind(tourney_ratings_2016, tourney_ratings_2017)
+
+tourney_ratings <- tourney_ratings %>%
+  mutate(adj_eff_margin = adj_off_eff - adj_def_eff)
+
+write_csv(tourney_ratings, file = "C:/Users/wagne/OneDrive/Documents/R/NCAAB Analysis/tourney_ratings.csv")
+```

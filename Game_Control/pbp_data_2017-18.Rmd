@@ -1,0 +1,46 @@
+---
+title: "NCAAB 2016-2018 Data"
+author: "Cole R Wagner"
+date: "3/11/2021"
+output: html_document
+---
+
+```{r}
+library(readxl)
+EFF_2017 <- read_excel("C:/Users/wagne/OneDrive/Documents/R/NCAAB Analysis/2018_EFF_PACE_STATS.xlsx")
+EFF_2016 <- read_excel("C:/Users/wagne/OneDrive/Documents/R/NCAAB Analysis/2017_EFF_PACE_STATS.xlsx")
+```
+
+```{r}
+EFF_2017 <- EFF_2017 %>%
+  arrange(Team)
+
+EFF_2016 <- EFF_2016 %>%
+  arrange(Team)
+
+tourney_teams_2017 <- EFF_2017$Team
+tourney_teams_2016 <- EFF_2016$Team
+
+tourney_ratings_2017 <- ratings_2017 %>%
+  filter(teams_2017 %in% tourney_teams_2017) %>%
+  arrange(teams_2017) %>%
+  mutate(year = 2018)
+
+tourney_ratings_2016 <- ratings_2016 %>%
+  filter(teams_2016 %in% tourney_teams_2016) %>%
+  arrange(teams_2016) %>%
+  mutate(year = 2017)
+
+tourney_ratings_2017 <- cbind(tourney_ratings_2017, EFF_2017$OEFF, EFF_2017$DEFF, EFF_2017$PACE)
+colnames(tourney_ratings_2017) <- c("team", "game_control", "year", "adj_off_eff", "adj_def_eff", "adj_pace")
+
+tourney_ratings_2016 <- cbind(tourney_ratings_2016, EFF_2016$OEFF, EFF_2016$DEFF, EFF_2016$PACE)
+colnames(tourney_ratings_2016) <- c("team", "game_control", "year", "adj_off_eff", "adj_def_eff", "adj_pace")
+
+tourney_ratings <- rbind(tourney_ratings_2016, tourney_ratings_2017)
+
+tourney_ratings <- tourney_ratings %>%
+  mutate(adj_eff_margin = adj_off_eff - adj_def_eff)
+
+write_csv(tourney_ratings, file = "C:/Users/wagne/OneDrive/Documents/R/NCAAB Analysis/tourney_ratings.csv")
+```
