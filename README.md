@@ -1,3 +1,3 @@
 # NCAAB
-## Analysis of College Basketball
+## Game_Control
 Computation and adjustment of game control scores.
