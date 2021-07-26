@@ -1,1 +1,1 @@
-# NCAAB_Analytics## Game_ControlComputation and adjustment of game control scores.
+# NCAAB Analytics## Game_ControlComputation and adjustment of game control scores.
