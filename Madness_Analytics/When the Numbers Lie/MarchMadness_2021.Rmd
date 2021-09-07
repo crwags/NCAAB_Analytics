@@ -1,0 +1,2595 @@
+---
+title: "When the Numbers Lie:"
+subtitle: "Why the Pac-12 Flourished and the Big Ten Flopped in the 2021 NCAA Tournament"
+author: "Cole R. Wagner"
+date: "9/6/2021"
+output: 
+  html_document:
+    theme: readable
+---
+
+```{r include=FALSE}
+library(tidyverse)
+library(ggplot2)
+library(DescTools)
+library(kableExtra)
+
+### data via KenPom.com
+
+final_21 <- read.csv("~/R/NCAAB Analysis/Madness Analytics/When the Numbers Lie/final_21.csv") %>%
+  arrange(TeamName)
+
+pt_21 <- read.csv("~/R/NCAAB Analysis/Madness Analytics/When the Numbers Lie/pt_21.csv") %>%
+  arrange(TeamName)
+
+final_21 <- cbind.data.frame(final_21, pt_21$seed)
+
+final_21 <- final_21 %>%
+  rename(seed = `pt_21$seed`)
+
+final_21 <- final_21 %>%
+  mutate(Conf = case_when(TeamName == "Ohio St." ~ "Big Ten",
+                          TeamName == "Nebraska" ~ "Big Ten",
+                          TeamName == "Iowa" ~ "Big Ten",
+                          TeamName == "Illinois" ~ "Big Ten",
+                          TeamName == "Indiana" ~ "Big Ten",
+                          TeamName == "Maryland" ~ "Big Ten",
+                          TeamName == "Michigan" ~ "Big Ten",
+                          TeamName == "Michigan St." ~ "Big Ten",
+                          TeamName == "Minnesota" ~ "Big Ten",
+                          TeamName == "Northwestern" ~ "Big Ten",
+                          TeamName == "Penn St." ~ "Big Ten",
+                          TeamName == "Purdue" ~ "Big Ten",
+                          TeamName == "Rutgers" ~ "Big Ten",
+                          TeamName == "Wisconsin" ~ "Big Ten",
+                          TeamName == "Virginia" ~ "ACC",
+                          TeamName == "Florida St." ~ "ACC",
+                          TeamName == "Virginia Tech" ~ "ACC",
+                          TeamName == "Georgia Tech" ~ "ACC",
+                          TeamName == "Clemson" ~ "ACC",
+                          TeamName == "North Carolina" ~ "ACC",
+                          TeamName == "Louisville" ~ "ACC",
+                          TeamName == "Syracuse" ~ "ACC",
+                          TeamName == "N.C. State" ~ "ACC",
+                          TeamName == "Duke" ~ "ACC",
+                          TeamName == "Notre Dame" ~ "ACC",
+                          TeamName == "Pittsburgh" ~ "ACC",
+                          TeamName == "Miami FL" ~ "ACC",
+                          TeamName == "Wake Forest" ~ "ACC",
+                          TeamName == "Boston College" ~ "ACC",
+                          TeamName == "Baylor" ~ "Big 12",
+                          TeamName == "Kansas" ~ "Big 12",
+                          TeamName == "Texas" ~ "Big 12",
+                          TeamName == "West Virginia" ~ "Big 12",
+                          TeamName == "Oklahoma St." ~ "Big 12",
+                          TeamName == "Texas Tech" ~ "Big 12",
+                          TeamName == "Oklahoma" ~ "Big 12",
+                          TeamName == "TCU" ~ "Big 12",
+                          TeamName == "Kansas St." ~ "Big 12",
+                          TeamName == "Iowa St." ~ "Big 12",
+                          TeamName == "Oregon" ~ "Pac 12",
+                          TeamName == "USC" ~ "Pac 12",
+                          TeamName == "Colorado" ~ "Pac 12",
+                          TeamName == "UCLA" ~ "Pac 12",
+                          TeamName == "Arizona" ~ "Pac 12",
+                          TeamName == "Oregon St." ~ "Pac 12",
+                          TeamName == "Stanford" ~ "Pac 12",
+                          TeamName == "Utah" ~ "Pac 12",
+                          TeamName == "Arizona St." ~ "Pac 12",
+                          TeamName == "Washington St." ~ "Pac 12",
+                          TeamName == "Washington" ~ "Pac 12",
+                          TeamName == "California" ~ "Pac 12",
+                          TeamName == "Villanova" ~ "Big East",
+                          TeamName == "Creighton" ~ "Big East",
+                          TeamName == "Connecticut" ~ "Big East",
+                          TeamName == "St. John's" ~ "Big East",
+                          TeamName == "Seton Hall" ~ "Big East",
+                          TeamName == "Providence" ~ "Big East",
+                          TeamName == "Xavier" ~ "Big East",
+                          TeamName == "Georgetown" ~ "Big East",
+                          TeamName == "Marquette" ~ "Big East",
+                          TeamName == "Butler" ~ "Big East",
+                          TeamName == "DePaul" ~ "Big East",
+                          TeamName == "Alabama" ~ "SEC",
+                          TeamName == "Arkansas" ~ "SEC",
+                          TeamName == "LSU" ~ "SEC",
+                          TeamName == "Tennessee" ~ "SEC",
+                          TeamName == "Florida" ~ "SEC",
+                          TeamName == "Mississippi" ~ "SEC",
+                          TeamName == "Missouri" ~ "SEC",
+                          TeamName == "Kentucky" ~ "SEC",
+                          TeamName == "Mississippi St." ~ "SEC",
+                          TeamName == "Georgia" ~ "SEC",
+                          TeamName == "Auburn" ~ "SEC",
+                          TeamName == "South Carolina" ~ "SEC",
+                          TeamName == "Texas A&M" ~ "SEC",
+                          TeamName == "Vanderbilt" ~ "SEC",
+                          TRUE ~ "Mid-Major"))
+
+pt_21 <- pt_21 %>%
+  mutate(Conf = case_when(TeamName == "Ohio St." ~ "Big Ten",
+                          TeamName == "Nebraska" ~ "Big Ten",
+                          TeamName == "Iowa" ~ "Big Ten",
+                          TeamName == "Illinois" ~ "Big Ten",
+                          TeamName == "Indiana" ~ "Big Ten",
+                          TeamName == "Maryland" ~ "Big Ten",
+                          TeamName == "Michigan" ~ "Big Ten",
+                          TeamName == "Michigan St." ~ "Big Ten",
+                          TeamName == "Minnesota" ~ "Big Ten",
+                          TeamName == "Northwestern" ~ "Big Ten",
+                          TeamName == "Penn St." ~ "Big Ten",
+                          TeamName == "Purdue" ~ "Big Ten",
+                          TeamName == "Rutgers" ~ "Big Ten",
+                          TeamName == "Wisconsin" ~ "Big Ten",
+                          TeamName == "Virginia" ~ "ACC",
+                          TeamName == "Florida St." ~ "ACC",
+                          TeamName == "Virginia Tech" ~ "ACC",
+                          TeamName == "Georgia Tech" ~ "ACC",
+                          TeamName == "Clemson" ~ "ACC",
+                          TeamName == "North Carolina" ~ "ACC",
+                          TeamName == "Louisville" ~ "ACC",
+                          TeamName == "Syracuse" ~ "ACC",
+                          TeamName == "N.C. State" ~ "ACC",
+                          TeamName == "Duke" ~ "ACC",
+                          TeamName == "Notre Dame" ~ "ACC",
+                          TeamName == "Pittsburgh" ~ "ACC",
+                          TeamName == "Miami FL" ~ "ACC",
+                          TeamName == "Wake Forest" ~ "ACC",
+                          TeamName == "Boston College" ~ "ACC",
+                          TeamName == "Baylor" ~ "Big 12",
+                          TeamName == "Kansas" ~ "Big 12",
+                          TeamName == "Texas" ~ "Big 12",
+                          TeamName == "West Virginia" ~ "Big 12",
+                          TeamName == "Oklahoma St." ~ "Big 12",
+                          TeamName == "Texas Tech" ~ "Big 12",
+                          TeamName == "Oklahoma" ~ "Big 12",
+                          TeamName == "TCU" ~ "Big 12",
+                          TeamName == "Kansas St." ~ "Big 12",
+                          TeamName == "Iowa St." ~ "Big 12",
+                          TeamName == "Oregon" ~ "Pac 12",
+                          TeamName == "USC" ~ "Pac 12",
+                          TeamName == "Colorado" ~ "Pac 12",
+                          TeamName == "UCLA" ~ "Pac 12",
+                          TeamName == "Arizona" ~ "Pac 12",
+                          TeamName == "Oregon St." ~ "Pac 12",
+                          TeamName == "Stanford" ~ "Pac 12",
+                          TeamName == "Utah" ~ "Pac 12",
+                          TeamName == "Arizona St." ~ "Pac 12",
+                          TeamName == "Washington St." ~ "Pac 12",
+                          TeamName == "Washington" ~ "Pac 12",
+                          TeamName == "California" ~ "Pac 12",
+                          TeamName == "Villanova" ~ "Big East",
+                          TeamName == "Creighton" ~ "Big East",
+                          TeamName == "Connecticut" ~ "Big East",
+                          TeamName == "St. John's" ~ "Big East",
+                          TeamName == "Seton Hall" ~ "Big East",
+                          TeamName == "Providence" ~ "Big East",
+                          TeamName == "Xavier" ~ "Big East",
+                          TeamName == "Georgetown" ~ "Big East",
+                          TeamName == "Marquette" ~ "Big East",
+                          TeamName == "Butler" ~ "Big East",
+                          TeamName == "DePaul" ~ "Big East",
+                          TeamName == "Alabama" ~ "SEC",
+                          TeamName == "Arkansas" ~ "SEC",
+                          TeamName == "LSU" ~ "SEC",
+                          TeamName == "Tennessee" ~ "SEC",
+                          TeamName == "Florida" ~ "SEC",
+                          TeamName == "Mississippi" ~ "SEC",
+                          TeamName == "Missouri" ~ "SEC",
+                          TeamName == "Kentucky" ~ "SEC",
+                          TeamName == "Mississippi St." ~ "SEC",
+                          TeamName == "Georgia" ~ "SEC",
+                          TeamName == "Auburn" ~ "SEC",
+                          TeamName == "South Carolina" ~ "SEC",
+                          TeamName == "Texas A&M" ~ "SEC",
+                          TeamName == "Vanderbilt" ~ "SEC",
+                          TRUE ~ "Mid-Major"))
+
+#######################################################################
+
+final_19 <- read.csv("~/R/NCAAB Analysis/Madness Analytics/When the Numbers Lie/final_19.csv") %>%
+  arrange(TeamName)
+
+pt_19 <- read.csv("~/R/NCAAB Analysis/Madness Analytics/When the Numbers Lie/pt_19.csv") %>%
+  arrange(TeamName)
+
+final_19 <- cbind.data.frame(final_19, pt_19$seed)
+
+final_19 <- final_19 %>%
+  rename(seed = `pt_19$seed`)
+
+final_19 <- final_19 %>%
+  mutate(Conf = case_when(TeamName == "Ohio St." ~ "Big Ten",
+                          TeamName == "Nebraska" ~ "Big Ten",
+                          TeamName == "Iowa" ~ "Big Ten",
+                          TeamName == "Illinois" ~ "Big Ten",
+                          TeamName == "Indiana" ~ "Big Ten",
+                          TeamName == "Maryland" ~ "Big Ten",
+                          TeamName == "Michigan" ~ "Big Ten",
+                          TeamName == "Michigan St." ~ "Big Ten",
+                          TeamName == "Minnesota" ~ "Big Ten",
+                          TeamName == "Northwestern" ~ "Big Ten",
+                          TeamName == "Penn St." ~ "Big Ten",
+                          TeamName == "Purdue" ~ "Big Ten",
+                          TeamName == "Rutgers" ~ "Big Ten",
+                          TeamName == "Wisconsin" ~ "Big Ten",
+                          TeamName == "Virginia" ~ "ACC",
+                          TeamName == "Florida St." ~ "ACC",
+                          TeamName == "Virginia Tech" ~ "ACC",
+                          TeamName == "Georgia Tech" ~ "ACC",
+                          TeamName == "Clemson" ~ "ACC",
+                          TeamName == "North Carolina" ~ "ACC",
+                          TeamName == "Louisville" ~ "ACC",
+                          TeamName == "Syracuse" ~ "ACC",
+                          TeamName == "N.C. State" ~ "ACC",
+                          TeamName == "Duke" ~ "ACC",
+                          TeamName == "Notre Dame" ~ "ACC",
+                          TeamName == "Pittsburgh" ~ "ACC",
+                          TeamName == "Miami FL" ~ "ACC",
+                          TeamName == "Wake Forest" ~ "ACC",
+                          TeamName == "Boston College" ~ "ACC",
+                          TeamName == "Baylor" ~ "Big 12",
+                          TeamName == "Kansas" ~ "Big 12",
+                          TeamName == "Texas" ~ "Big 12",
+                          TeamName == "West Virginia" ~ "Big 12",
+                          TeamName == "Oklahoma St." ~ "Big 12",
+                          TeamName == "Texas Tech" ~ "Big 12",
+                          TeamName == "Oklahoma" ~ "Big 12",
+                          TeamName == "TCU" ~ "Big 12",
+                          TeamName == "Kansas St." ~ "Big 12",
+                          TeamName == "Iowa St." ~ "Big 12",
+                          TeamName == "Oregon" ~ "Pac 12",
+                          TeamName == "USC" ~ "Pac 12",
+                          TeamName == "Colorado" ~ "Pac 12",
+                          TeamName == "UCLA" ~ "Pac 12",
+                          TeamName == "Arizona" ~ "Pac 12",
+                          TeamName == "Oregon St." ~ "Pac 12",
+                          TeamName == "Stanford" ~ "Pac 12",
+                          TeamName == "Utah" ~ "Pac 12",
+                          TeamName == "Arizona St." ~ "Pac 12",
+                          TeamName == "Washington St." ~ "Pac 12",
+                          TeamName == "Washington" ~ "Pac 12",
+                          TeamName == "California" ~ "Pac 12",
+                          TeamName == "Villanova" ~ "Big East",
+                          TeamName == "Creighton" ~ "Big East",
+                          TeamName == "St. John's" ~ "Big East",
+                          TeamName == "Seton Hall" ~ "Big East",
+                          TeamName == "Providence" ~ "Big East",
+                          TeamName == "Xavier" ~ "Big East",
+                          TeamName == "Georgetown" ~ "Big East",
+                          TeamName == "Marquette" ~ "Big East",
+                          TeamName == "Butler" ~ "Big East",
+                          TeamName == "DePaul" ~ "Big East",
+                          TeamName == "Alabama" ~ "SEC",
+                          TeamName == "Arkansas" ~ "SEC",
+                          TeamName == "LSU" ~ "SEC",
+                          TeamName == "Tennessee" ~ "SEC",
+                          TeamName == "Florida" ~ "SEC",
+                          TeamName == "Mississippi" ~ "SEC",
+                          TeamName == "Missouri" ~ "SEC",
+                          TeamName == "Kentucky" ~ "SEC",
+                          TeamName == "Mississippi St." ~ "SEC",
+                          TeamName == "Georgia" ~ "SEC",
+                          TeamName == "Auburn" ~ "SEC",
+                          TeamName == "South Carolina" ~ "SEC",
+                          TeamName == "Texas A&M" ~ "SEC",
+                          TeamName == "Vanderbilt" ~ "SEC",
+                          TRUE ~ "Mid-Major"))
+
+pt_19 <- pt_19 %>%
+  mutate(Conf = case_when(TeamName == "Ohio St." ~ "Big Ten",
+                          TeamName == "Nebraska" ~ "Big Ten",
+                          TeamName == "Iowa" ~ "Big Ten",
+                          TeamName == "Illinois" ~ "Big Ten",
+                          TeamName == "Indiana" ~ "Big Ten",
+                          TeamName == "Maryland" ~ "Big Ten",
+                          TeamName == "Michigan" ~ "Big Ten",
+                          TeamName == "Michigan St." ~ "Big Ten",
+                          TeamName == "Minnesota" ~ "Big Ten",
+                          TeamName == "Northwestern" ~ "Big Ten",
+                          TeamName == "Penn St." ~ "Big Ten",
+                          TeamName == "Purdue" ~ "Big Ten",
+                          TeamName == "Rutgers" ~ "Big Ten",
+                          TeamName == "Wisconsin" ~ "Big Ten",
+                          TeamName == "Virginia" ~ "ACC",
+                          TeamName == "Florida St." ~ "ACC",
+                          TeamName == "Virginia Tech" ~ "ACC",
+                          TeamName == "Georgia Tech" ~ "ACC",
+                          TeamName == "Clemson" ~ "ACC",
+                          TeamName == "North Carolina" ~ "ACC",
+                          TeamName == "Louisville" ~ "ACC",
+                          TeamName == "Syracuse" ~ "ACC",
+                          TeamName == "N.C. State" ~ "ACC",
+                          TeamName == "Duke" ~ "ACC",
+                          TeamName == "Notre Dame" ~ "ACC",
+                          TeamName == "Pittsburgh" ~ "ACC",
+                          TeamName == "Miami FL" ~ "ACC",
+                          TeamName == "Wake Forest" ~ "ACC",
+                          TeamName == "Boston College" ~ "ACC",
+                          TeamName == "Baylor" ~ "Big 12",
+                          TeamName == "Kansas" ~ "Big 12",
+                          TeamName == "Texas" ~ "Big 12",
+                          TeamName == "West Virginia" ~ "Big 12",
+                          TeamName == "Oklahoma St." ~ "Big 12",
+                          TeamName == "Texas Tech" ~ "Big 12",
+                          TeamName == "Oklahoma" ~ "Big 12",
+                          TeamName == "TCU" ~ "Big 12",
+                          TeamName == "Kansas St." ~ "Big 12",
+                          TeamName == "Iowa St." ~ "Big 12",
+                          TeamName == "Oregon" ~ "Pac 12",
+                          TeamName == "USC" ~ "Pac 12",
+                          TeamName == "Colorado" ~ "Pac 12",
+                          TeamName == "UCLA" ~ "Pac 12",
+                          TeamName == "Arizona" ~ "Pac 12",
+                          TeamName == "Oregon St." ~ "Pac 12",
+                          TeamName == "Stanford" ~ "Pac 12",
+                          TeamName == "Utah" ~ "Pac 12",
+                          TeamName == "Arizona St." ~ "Pac 12",
+                          TeamName == "Washington St." ~ "Pac 12",
+                          TeamName == "Washington" ~ "Pac 12",
+                          TeamName == "California" ~ "Pac 12",
+                          TeamName == "Villanova" ~ "Big East",
+                          TeamName == "Creighton" ~ "Big East",
+                          TeamName == "St. John's" ~ "Big East",
+                          TeamName == "Seton Hall" ~ "Big East",
+                          TeamName == "Providence" ~ "Big East",
+                          TeamName == "Xavier" ~ "Big East",
+                          TeamName == "Georgetown" ~ "Big East",
+                          TeamName == "Marquette" ~ "Big East",
+                          TeamName == "Butler" ~ "Big East",
+                          TeamName == "DePaul" ~ "Big East",
+                          TeamName == "Alabama" ~ "SEC",
+                          TeamName == "Arkansas" ~ "SEC",
+                          TeamName == "LSU" ~ "SEC",
+                          TeamName == "Tennessee" ~ "SEC",
+                          TeamName == "Florida" ~ "SEC",
+                          TeamName == "Mississippi" ~ "SEC",
+                          TeamName == "Missouri" ~ "SEC",
+                          TeamName == "Kentucky" ~ "SEC",
+                          TeamName == "Mississippi St." ~ "SEC",
+                          TeamName == "Georgia" ~ "SEC",
+                          TeamName == "Auburn" ~ "SEC",
+                          TeamName == "South Carolina" ~ "SEC",
+                          TeamName == "Texas A&M" ~ "SEC",
+                          TeamName == "Vanderbilt" ~ "SEC",
+                          TRUE ~ "Mid-Major"))
+
+#######################################################################
+
+final_18 <- read.csv("~/R/NCAAB Analysis/Madness Analytics/When the Numbers Lie/final_18.csv") %>%
+  arrange(TeamName)
+
+pt_18 <- read.csv("~/R/NCAAB Analysis/Madness Analytics/When the Numbers Lie/pt_18.csv") %>%
+  arrange(TeamName)
+
+final_18 <- cbind.data.frame(final_18, pt_18$seed)
+
+final_18 <- final_18 %>%
+  rename(seed = `pt_18$seed`)
+
+final_18 <- final_18 %>%
+  mutate(Conf = case_when(TeamName == "Ohio St." ~ "Big Ten",
+                          TeamName == "Nebraska" ~ "Big Ten",
+                          TeamName == "Iowa" ~ "Big Ten",
+                          TeamName == "Illinois" ~ "Big Ten",
+                          TeamName == "Indiana" ~ "Big Ten",
+                          TeamName == "Maryland" ~ "Big Ten",
+                          TeamName == "Michigan" ~ "Big Ten",
+                          TeamName == "Michigan St." ~ "Big Ten",
+                          TeamName == "Minnesota" ~ "Big Ten",
+                          TeamName == "Northwestern" ~ "Big Ten",
+                          TeamName == "Penn St." ~ "Big Ten",
+                          TeamName == "Purdue" ~ "Big Ten",
+                          TeamName == "Rutgers" ~ "Big Ten",
+                          TeamName == "Wisconsin" ~ "Big Ten",
+                          TeamName == "Virginia" ~ "ACC",
+                          TeamName == "Florida St." ~ "ACC",
+                          TeamName == "Virginia Tech" ~ "ACC",
+                          TeamName == "Georgia Tech" ~ "ACC",
+                          TeamName == "Clemson" ~ "ACC",
+                          TeamName == "North Carolina" ~ "ACC",
+                          TeamName == "Louisville" ~ "ACC",
+                          TeamName == "Syracuse" ~ "ACC",
+                          TeamName == "N.C. State" ~ "ACC",
+                          TeamName == "Duke" ~ "ACC",
+                          TeamName == "Notre Dame" ~ "ACC",
+                          TeamName == "Pittsburgh" ~ "ACC",
+                          TeamName == "Miami FL" ~ "ACC",
+                          TeamName == "Wake Forest" ~ "ACC",
+                          TeamName == "Boston College" ~ "ACC",
+                          TeamName == "Baylor" ~ "Big 12",
+                          TeamName == "Kansas" ~ "Big 12",
+                          TeamName == "Texas" ~ "Big 12",
+                          TeamName == "West Virginia" ~ "Big 12",
+                          TeamName == "Oklahoma St." ~ "Big 12",
+                          TeamName == "Texas Tech" ~ "Big 12",
+                          TeamName == "Oklahoma" ~ "Big 12",
+                          TeamName == "TCU" ~ "Big 12",
+                          TeamName == "Kansas St." ~ "Big 12",
+                          TeamName == "Iowa St." ~ "Big 12",
+                          TeamName == "Oregon" ~ "Pac 12",
+                          TeamName == "USC" ~ "Pac 12",
+                          TeamName == "Colorado" ~ "Pac 12",
+                          TeamName == "UCLA" ~ "Pac 12",
+                          TeamName == "Arizona" ~ "Pac 12",
+                          TeamName == "Oregon St." ~ "Pac 12",
+                          TeamName == "Stanford" ~ "Pac 12",
+                          TeamName == "Utah" ~ "Pac 12",
+                          TeamName == "Arizona St." ~ "Pac 12",
+                          TeamName == "Washington St." ~ "Pac 12",
+                          TeamName == "Washington" ~ "Pac 12",
+                          TeamName == "California" ~ "Pac 12",
+                          TeamName == "Villanova" ~ "Big East",
+                          TeamName == "Creighton" ~ "Big East",
+                          TeamName == "St. John's" ~ "Big East",
+                          TeamName == "Seton Hall" ~ "Big East",
+                          TeamName == "Providence" ~ "Big East",
+                          TeamName == "Xavier" ~ "Big East",
+                          TeamName == "Georgetown" ~ "Big East",
+                          TeamName == "Marquette" ~ "Big East",
+                          TeamName == "Butler" ~ "Big East",
+                          TeamName == "DePaul" ~ "Big East",
+                          TeamName == "Alabama" ~ "SEC",
+                          TeamName == "Arkansas" ~ "SEC",
+                          TeamName == "LSU" ~ "SEC",
+                          TeamName == "Tennessee" ~ "SEC",
+                          TeamName == "Florida" ~ "SEC",
+                          TeamName == "Mississippi" ~ "SEC",
+                          TeamName == "Missouri" ~ "SEC",
+                          TeamName == "Kentucky" ~ "SEC",
+                          TeamName == "Mississippi St." ~ "SEC",
+                          TeamName == "Georgia" ~ "SEC",
+                          TeamName == "Auburn" ~ "SEC",
+                          TeamName == "South Carolina" ~ "SEC",
+                          TeamName == "Texas A&M" ~ "SEC",
+                          TeamName == "Vanderbilt" ~ "SEC",
+                          TRUE ~ "Mid-Major"))
+
+pt_18 <- pt_18 %>%
+  mutate(Conf = case_when(TeamName == "Ohio St." ~ "Big Ten",
+                          TeamName == "Nebraska" ~ "Big Ten",
+                          TeamName == "Iowa" ~ "Big Ten",
+                          TeamName == "Illinois" ~ "Big Ten",
+                          TeamName == "Indiana" ~ "Big Ten",
+                          TeamName == "Maryland" ~ "Big Ten",
+                          TeamName == "Michigan" ~ "Big Ten",
+                          TeamName == "Michigan St." ~ "Big Ten",
+                          TeamName == "Minnesota" ~ "Big Ten",
+                          TeamName == "Northwestern" ~ "Big Ten",
+                          TeamName == "Penn St." ~ "Big Ten",
+                          TeamName == "Purdue" ~ "Big Ten",
+                          TeamName == "Rutgers" ~ "Big Ten",
+                          TeamName == "Wisconsin" ~ "Big Ten",
+                          TeamName == "Virginia" ~ "ACC",
+                          TeamName == "Florida St." ~ "ACC",
+                          TeamName == "Virginia Tech" ~ "ACC",
+                          TeamName == "Georgia Tech" ~ "ACC",
+                          TeamName == "Clemson" ~ "ACC",
+                          TeamName == "North Carolina" ~ "ACC",
+                          TeamName == "Louisville" ~ "ACC",
+                          TeamName == "Syracuse" ~ "ACC",
+                          TeamName == "N.C. State" ~ "ACC",
+                          TeamName == "Duke" ~ "ACC",
+                          TeamName == "Notre Dame" ~ "ACC",
+                          TeamName == "Pittsburgh" ~ "ACC",
+                          TeamName == "Miami FL" ~ "ACC",
+                          TeamName == "Wake Forest" ~ "ACC",
+                          TeamName == "Boston College" ~ "ACC",
+                          TeamName == "Baylor" ~ "Big 12",
+                          TeamName == "Kansas" ~ "Big 12",
+                          TeamName == "Texas" ~ "Big 12",
+                          TeamName == "West Virginia" ~ "Big 12",
+                          TeamName == "Oklahoma St." ~ "Big 12",
+                          TeamName == "Texas Tech" ~ "Big 12",
+                          TeamName == "Oklahoma" ~ "Big 12",
+                          TeamName == "TCU" ~ "Big 12",
+                          TeamName == "Kansas St." ~ "Big 12",
+                          TeamName == "Iowa St." ~ "Big 12",
+                          TeamName == "Oregon" ~ "Pac 12",
+                          TeamName == "USC" ~ "Pac 12",
+                          TeamName == "Colorado" ~ "Pac 12",
+                          TeamName == "UCLA" ~ "Pac 12",
+                          TeamName == "Arizona" ~ "Pac 12",
+                          TeamName == "Oregon St." ~ "Pac 12",
+                          TeamName == "Stanford" ~ "Pac 12",
+                          TeamName == "Utah" ~ "Pac 12",
+                          TeamName == "Arizona St." ~ "Pac 12",
+                          TeamName == "Washington St." ~ "Pac 12",
+                          TeamName == "Washington" ~ "Pac 12",
+                          TeamName == "California" ~ "Pac 12",
+                          TeamName == "Villanova" ~ "Big East",
+                          TeamName == "Creighton" ~ "Big East",
+                          TeamName == "St. John's" ~ "Big East",
+                          TeamName == "Seton Hall" ~ "Big East",
+                          TeamName == "Providence" ~ "Big East",
+                          TeamName == "Xavier" ~ "Big East",
+                          TeamName == "Georgetown" ~ "Big East",
+                          TeamName == "Marquette" ~ "Big East",
+                          TeamName == "Butler" ~ "Big East",
+                          TeamName == "DePaul" ~ "Big East",
+                          TeamName == "Alabama" ~ "SEC",
+                          TeamName == "Arkansas" ~ "SEC",
+                          TeamName == "LSU" ~ "SEC",
+                          TeamName == "Tennessee" ~ "SEC",
+                          TeamName == "Florida" ~ "SEC",
+                          TeamName == "Mississippi" ~ "SEC",
+                          TeamName == "Missouri" ~ "SEC",
+                          TeamName == "Kentucky" ~ "SEC",
+                          TeamName == "Mississippi St." ~ "SEC",
+                          TeamName == "Georgia" ~ "SEC",
+                          TeamName == "Auburn" ~ "SEC",
+                          TeamName == "South Carolina" ~ "SEC",
+                          TeamName == "Texas A&M" ~ "SEC",
+                          TeamName == "Vanderbilt" ~ "SEC",
+                          TRUE ~ "Mid-Major"))
+
+
+#######################################################################
+
+final_17 <- read.csv("~/R/NCAAB Analysis/Madness Analytics/When the Numbers Lie/final_17.csv") %>%
+  arrange(TeamName)
+
+pt_17 <- read.csv("~/R/NCAAB Analysis/Madness Analytics/When the Numbers Lie/pt_17.csv") %>%
+  arrange(TeamName)
+
+final_17 <- cbind.data.frame(final_17, pt_17$seed)
+
+final_17 <- final_17 %>%
+  rename(seed = `pt_17$seed`)
+
+final_17 <- final_17 %>%
+  mutate(Conf = case_when(TeamName == "Ohio St." ~ "Big Ten",
+                          TeamName == "Nebraska" ~ "Big Ten",
+                          TeamName == "Iowa" ~ "Big Ten",
+                          TeamName == "Illinois" ~ "Big Ten",
+                          TeamName == "Indiana" ~ "Big Ten",
+                          TeamName == "Maryland" ~ "Big Ten",
+                          TeamName == "Michigan" ~ "Big Ten",
+                          TeamName == "Michigan St." ~ "Big Ten",
+                          TeamName == "Minnesota" ~ "Big Ten",
+                          TeamName == "Northwestern" ~ "Big Ten",
+                          TeamName == "Penn St." ~ "Big Ten",
+                          TeamName == "Purdue" ~ "Big Ten",
+                          TeamName == "Rutgers" ~ "Big Ten",
+                          TeamName == "Wisconsin" ~ "Big Ten",
+                          TeamName == "Virginia" ~ "ACC",
+                          TeamName == "Florida St." ~ "ACC",
+                          TeamName == "Virginia Tech" ~ "ACC",
+                          TeamName == "Georgia Tech" ~ "ACC",
+                          TeamName == "Clemson" ~ "ACC",
+                          TeamName == "North Carolina" ~ "ACC",
+                          TeamName == "Louisville" ~ "ACC",
+                          TeamName == "Syracuse" ~ "ACC",
+                          TeamName == "N.C. State" ~ "ACC",
+                          TeamName == "Duke" ~ "ACC",
+                          TeamName == "Notre Dame" ~ "ACC",
+                          TeamName == "Pittsburgh" ~ "ACC",
+                          TeamName == "Miami FL" ~ "ACC",
+                          TeamName == "Wake Forest" ~ "ACC",
+                          TeamName == "Boston College" ~ "ACC",
+                          TeamName == "Baylor" ~ "Big 12",
+                          TeamName == "Kansas" ~ "Big 12",
+                          TeamName == "Texas" ~ "Big 12",
+                          TeamName == "West Virginia" ~ "Big 12",
+                          TeamName == "Oklahoma St." ~ "Big 12",
+                          TeamName == "Texas Tech" ~ "Big 12",
+                          TeamName == "Oklahoma" ~ "Big 12",
+                          TeamName == "TCU" ~ "Big 12",
+                          TeamName == "Kansas St." ~ "Big 12",
+                          TeamName == "Iowa St." ~ "Big 12",
+                          TeamName == "Oregon" ~ "Pac 12",
+                          TeamName == "USC" ~ "Pac 12",
+                          TeamName == "Colorado" ~ "Pac 12",
+                          TeamName == "UCLA" ~ "Pac 12",
+                          TeamName == "Arizona" ~ "Pac 12",
+                          TeamName == "Oregon St." ~ "Pac 12",
+                          TeamName == "Stanford" ~ "Pac 12",
+                          TeamName == "Utah" ~ "Pac 12",
+                          TeamName == "Arizona St." ~ "Pac 12",
+                          TeamName == "Washington St." ~ "Pac 12",
+                          TeamName == "Washington" ~ "Pac 12",
+                          TeamName == "California" ~ "Pac 12",
+                          TeamName == "Villanova" ~ "Big East",
+                          TeamName == "Creighton" ~ "Big East",
+                          TeamName == "St. John's" ~ "Big East",
+                          TeamName == "Seton Hall" ~ "Big East",
+                          TeamName == "Providence" ~ "Big East",
+                          TeamName == "Xavier" ~ "Big East",
+                          TeamName == "Georgetown" ~ "Big East",
+                          TeamName == "Marquette" ~ "Big East",
+                          TeamName == "Butler" ~ "Big East",
+                          TeamName == "DePaul" ~ "Big East",
+                          TeamName == "Alabama" ~ "SEC",
+                          TeamName == "Arkansas" ~ "SEC",
+                          TeamName == "LSU" ~ "SEC",
+                          TeamName == "Tennessee" ~ "SEC",
+                          TeamName == "Florida" ~ "SEC",
+                          TeamName == "Mississippi" ~ "SEC",
+                          TeamName == "Missouri" ~ "SEC",
+                          TeamName == "Kentucky" ~ "SEC",
+                          TeamName == "Mississippi St." ~ "SEC",
+                          TeamName == "Georgia" ~ "SEC",
+                          TeamName == "Auburn" ~ "SEC",
+                          TeamName == "South Carolina" ~ "SEC",
+                          TeamName == "Texas A&M" ~ "SEC",
+                          TeamName == "Vanderbilt" ~ "SEC",
+                          TRUE ~ "Mid-Major"))
+
+pt_17 <- pt_17 %>%
+  mutate(Conf = case_when(TeamName == "Ohio St." ~ "Big Ten",
+                          TeamName == "Nebraska" ~ "Big Ten",
+                          TeamName == "Iowa" ~ "Big Ten",
+                          TeamName == "Illinois" ~ "Big Ten",
+                          TeamName == "Indiana" ~ "Big Ten",
+                          TeamName == "Maryland" ~ "Big Ten",
+                          TeamName == "Michigan" ~ "Big Ten",
+                          TeamName == "Michigan St." ~ "Big Ten",
+                          TeamName == "Minnesota" ~ "Big Ten",
+                          TeamName == "Northwestern" ~ "Big Ten",
+                          TeamName == "Penn St." ~ "Big Ten",
+                          TeamName == "Purdue" ~ "Big Ten",
+                          TeamName == "Rutgers" ~ "Big Ten",
+                          TeamName == "Wisconsin" ~ "Big Ten",
+                          TeamName == "Virginia" ~ "ACC",
+                          TeamName == "Florida St." ~ "ACC",
+                          TeamName == "Virginia Tech" ~ "ACC",
+                          TeamName == "Georgia Tech" ~ "ACC",
+                          TeamName == "Clemson" ~ "ACC",
+                          TeamName == "North Carolina" ~ "ACC",
+                          TeamName == "Louisville" ~ "ACC",
+                          TeamName == "Syracuse" ~ "ACC",
+                          TeamName == "N.C. State" ~ "ACC",
+                          TeamName == "Duke" ~ "ACC",
+                          TeamName == "Notre Dame" ~ "ACC",
+                          TeamName == "Pittsburgh" ~ "ACC",
+                          TeamName == "Miami FL" ~ "ACC",
+                          TeamName == "Wake Forest" ~ "ACC",
+                          TeamName == "Boston College" ~ "ACC",
+                          TeamName == "Baylor" ~ "Big 12",
+                          TeamName == "Kansas" ~ "Big 12",
+                          TeamName == "Texas" ~ "Big 12",
+                          TeamName == "West Virginia" ~ "Big 12",
+                          TeamName == "Oklahoma St." ~ "Big 12",
+                          TeamName == "Texas Tech" ~ "Big 12",
+                          TeamName == "Oklahoma" ~ "Big 12",
+                          TeamName == "TCU" ~ "Big 12",
+                          TeamName == "Kansas St." ~ "Big 12",
+                          TeamName == "Iowa St." ~ "Big 12",
+                          TeamName == "Oregon" ~ "Pac 12",
+                          TeamName == "USC" ~ "Pac 12",
+                          TeamName == "Colorado" ~ "Pac 12",
+                          TeamName == "UCLA" ~ "Pac 12",
+                          TeamName == "Arizona" ~ "Pac 12",
+                          TeamName == "Oregon St." ~ "Pac 12",
+                          TeamName == "Stanford" ~ "Pac 12",
+                          TeamName == "Utah" ~ "Pac 12",
+                          TeamName == "Arizona St." ~ "Pac 12",
+                          TeamName == "Washington St." ~ "Pac 12",
+                          TeamName == "Washington" ~ "Pac 12",
+                          TeamName == "California" ~ "Pac 12",
+                          TeamName == "Villanova" ~ "Big East",
+                          TeamName == "Creighton" ~ "Big East",
+                          TeamName == "St. John's" ~ "Big East",
+                          TeamName == "Seton Hall" ~ "Big East",
+                          TeamName == "Providence" ~ "Big East",
+                          TeamName == "Xavier" ~ "Big East",
+                          TeamName == "Georgetown" ~ "Big East",
+                          TeamName == "Marquette" ~ "Big East",
+                          TeamName == "Butler" ~ "Big East",
+                          TeamName == "DePaul" ~ "Big East",
+                          TeamName == "Alabama" ~ "SEC",
+                          TeamName == "Arkansas" ~ "SEC",
+                          TeamName == "LSU" ~ "SEC",
+                          TeamName == "Tennessee" ~ "SEC",
+                          TeamName == "Florida" ~ "SEC",
+                          TeamName == "Mississippi" ~ "SEC",
+                          TeamName == "Missouri" ~ "SEC",
+                          TeamName == "Kentucky" ~ "SEC",
+                          TeamName == "Mississippi St." ~ "SEC",
+                          TeamName == "Georgia" ~ "SEC",
+                          TeamName == "Auburn" ~ "SEC",
+                          TeamName == "South Carolina" ~ "SEC",
+                          TeamName == "Texas A&M" ~ "SEC",
+                          TeamName == "Vanderbilt" ~ "SEC",
+                          TRUE ~ "Mid-Major"))
+
+#######################################################################
+
+final_16 <- read.csv("~/R/NCAAB Analysis/Madness Analytics/When the Numbers Lie/final_16.csv") %>%
+  arrange(TeamName)
+
+pt_16 <- read.csv("~/R/NCAAB Analysis/Madness Analytics/When the Numbers Lie/pt_16.csv") %>%
+  arrange(TeamName)
+
+final_16 <- cbind.data.frame(final_16, pt_16$seed)
+
+final_16 <- final_16 %>%
+  rename(seed = `pt_16$seed`)
+
+final_16 <- final_16 %>%
+  mutate(Conf = case_when(TeamName == "Ohio St." ~ "Big Ten",
+                          TeamName == "Nebraska" ~ "Big Ten",
+                          TeamName == "Iowa" ~ "Big Ten",
+                          TeamName == "Illinois" ~ "Big Ten",
+                          TeamName == "Indiana" ~ "Big Ten",
+                          TeamName == "Maryland" ~ "Big Ten",
+                          TeamName == "Michigan" ~ "Big Ten",
+                          TeamName == "Michigan St." ~ "Big Ten",
+                          TeamName == "Minnesota" ~ "Big Ten",
+                          TeamName == "Northwestern" ~ "Big Ten",
+                          TeamName == "Penn St." ~ "Big Ten",
+                          TeamName == "Purdue" ~ "Big Ten",
+                          TeamName == "Rutgers" ~ "Big Ten",
+                          TeamName == "Wisconsin" ~ "Big Ten",
+                          TeamName == "Virginia" ~ "ACC",
+                          TeamName == "Florida St." ~ "ACC",
+                          TeamName == "Virginia Tech" ~ "ACC",
+                          TeamName == "Georgia Tech" ~ "ACC",
+                          TeamName == "Clemson" ~ "ACC",
+                          TeamName == "North Carolina" ~ "ACC",
+                          TeamName == "Louisville" ~ "ACC",
+                          TeamName == "Syracuse" ~ "ACC",
+                          TeamName == "N.C. State" ~ "ACC",
+                          TeamName == "Duke" ~ "ACC",
+                          TeamName == "Notre Dame" ~ "ACC",
+                          TeamName == "Pittsburgh" ~ "ACC",
+                          TeamName == "Miami FL" ~ "ACC",
+                          TeamName == "Wake Forest" ~ "ACC",
+                          TeamName == "Boston College" ~ "ACC",
+                          TeamName == "Baylor" ~ "Big 12",
+                          TeamName == "Kansas" ~ "Big 12",
+                          TeamName == "Texas" ~ "Big 12",
+                          TeamName == "West Virginia" ~ "Big 12",
+                          TeamName == "Oklahoma St." ~ "Big 12",
+                          TeamName == "Texas Tech" ~ "Big 12",
+                          TeamName == "Oklahoma" ~ "Big 12",
+                          TeamName == "TCU" ~ "Big 12",
+                          TeamName == "Kansas St." ~ "Big 12",
+                          TeamName == "Iowa St." ~ "Big 12",
+                          TeamName == "Oregon" ~ "Pac 12",
+                          TeamName == "USC" ~ "Pac 12",
+                          TeamName == "Colorado" ~ "Pac 12",
+                          TeamName == "UCLA" ~ "Pac 12",
+                          TeamName == "Arizona" ~ "Pac 12",
+                          TeamName == "Oregon St." ~ "Pac 12",
+                          TeamName == "Stanford" ~ "Pac 12",
+                          TeamName == "Utah" ~ "Pac 12",
+                          TeamName == "Arizona St." ~ "Pac 12",
+                          TeamName == "Washington St." ~ "Pac 12",
+                          TeamName == "Washington" ~ "Pac 12",
+                          TeamName == "California" ~ "Pac 12",
+                          TeamName == "Villanova" ~ "Big East",
+                          TeamName == "Creighton" ~ "Big East",
+                          TeamName == "St. John's" ~ "Big East",
+                          TeamName == "Seton Hall" ~ "Big East",
+                          TeamName == "Providence" ~ "Big East",
+                          TeamName == "Xavier" ~ "Big East",
+                          TeamName == "Georgetown" ~ "Big East",
+                          TeamName == "Marquette" ~ "Big East",
+                          TeamName == "Butler" ~ "Big East",
+                          TeamName == "DePaul" ~ "Big East",
+                          TeamName == "Alabama" ~ "SEC",
+                          TeamName == "Arkansas" ~ "SEC",
+                          TeamName == "LSU" ~ "SEC",
+                          TeamName == "Tennessee" ~ "SEC",
+                          TeamName == "Florida" ~ "SEC",
+                          TeamName == "Mississippi" ~ "SEC",
+                          TeamName == "Missouri" ~ "SEC",
+                          TeamName == "Kentucky" ~ "SEC",
+                          TeamName == "Mississippi St." ~ "SEC",
+                          TeamName == "Georgia" ~ "SEC",
+                          TeamName == "Auburn" ~ "SEC",
+                          TeamName == "South Carolina" ~ "SEC",
+                          TeamName == "Texas A&M" ~ "SEC",
+                          TeamName == "Vanderbilt" ~ "SEC",
+                          TRUE ~ "Mid-Major"))
+
+pt_16 <- pt_16 %>%
+  mutate(Conf = case_when(TeamName == "Ohio St." ~ "Big Ten",
+                          TeamName == "Nebraska" ~ "Big Ten",
+                          TeamName == "Iowa" ~ "Big Ten",
+                          TeamName == "Illinois" ~ "Big Ten",
+                          TeamName == "Indiana" ~ "Big Ten",
+                          TeamName == "Maryland" ~ "Big Ten",
+                          TeamName == "Michigan" ~ "Big Ten",
+                          TeamName == "Michigan St." ~ "Big Ten",
+                          TeamName == "Minnesota" ~ "Big Ten",
+                          TeamName == "Northwestern" ~ "Big Ten",
+                          TeamName == "Penn St." ~ "Big Ten",
+                          TeamName == "Purdue" ~ "Big Ten",
+                          TeamName == "Rutgers" ~ "Big Ten",
+                          TeamName == "Wisconsin" ~ "Big Ten",
+                          TeamName == "Virginia" ~ "ACC",
+                          TeamName == "Florida St." ~ "ACC",
+                          TeamName == "Virginia Tech" ~ "ACC",
+                          TeamName == "Georgia Tech" ~ "ACC",
+                          TeamName == "Clemson" ~ "ACC",
+                          TeamName == "North Carolina" ~ "ACC",
+                          TeamName == "Louisville" ~ "ACC",
+                          TeamName == "Syracuse" ~ "ACC",
+                          TeamName == "N.C. State" ~ "ACC",
+                          TeamName == "Duke" ~ "ACC",
+                          TeamName == "Notre Dame" ~ "ACC",
+                          TeamName == "Pittsburgh" ~ "ACC",
+                          TeamName == "Miami FL" ~ "ACC",
+                          TeamName == "Wake Forest" ~ "ACC",
+                          TeamName == "Boston College" ~ "ACC",
+                          TeamName == "Baylor" ~ "Big 12",
+                          TeamName == "Kansas" ~ "Big 12",
+                          TeamName == "Texas" ~ "Big 12",
+                          TeamName == "West Virginia" ~ "Big 12",
+                          TeamName == "Oklahoma St." ~ "Big 12",
+                          TeamName == "Texas Tech" ~ "Big 12",
+                          TeamName == "Oklahoma" ~ "Big 12",
+                          TeamName == "TCU" ~ "Big 12",
+                          TeamName == "Kansas St." ~ "Big 12",
+                          TeamName == "Iowa St." ~ "Big 12",
+                          TeamName == "Oregon" ~ "Pac 12",
+                          TeamName == "USC" ~ "Pac 12",
+                          TeamName == "Colorado" ~ "Pac 12",
+                          TeamName == "UCLA" ~ "Pac 12",
+                          TeamName == "Arizona" ~ "Pac 12",
+                          TeamName == "Oregon St." ~ "Pac 12",
+                          TeamName == "Stanford" ~ "Pac 12",
+                          TeamName == "Utah" ~ "Pac 12",
+                          TeamName == "Arizona St." ~ "Pac 12",
+                          TeamName == "Washington St." ~ "Pac 12",
+                          TeamName == "Washington" ~ "Pac 12",
+                          TeamName == "California" ~ "Pac 12",
+                          TeamName == "Villanova" ~ "Big East",
+                          TeamName == "Creighton" ~ "Big East",
+                          TeamName == "St. John's" ~ "Big East",
+                          TeamName == "Seton Hall" ~ "Big East",
+                          TeamName == "Providence" ~ "Big East",
+                          TeamName == "Xavier" ~ "Big East",
+                          TeamName == "Georgetown" ~ "Big East",
+                          TeamName == "Marquette" ~ "Big East",
+                          TeamName == "Butler" ~ "Big East",
+                          TeamName == "DePaul" ~ "Big East",
+                          TeamName == "Alabama" ~ "SEC",
+                          TeamName == "Arkansas" ~ "SEC",
+                          TeamName == "LSU" ~ "SEC",
+                          TeamName == "Tennessee" ~ "SEC",
+                          TeamName == "Florida" ~ "SEC",
+                          TeamName == "Mississippi" ~ "SEC",
+                          TeamName == "Missouri" ~ "SEC",
+                          TeamName == "Kentucky" ~ "SEC",
+                          TeamName == "Mississippi St." ~ "SEC",
+                          TeamName == "Georgia" ~ "SEC",
+                          TeamName == "Auburn" ~ "SEC",
+                          TeamName == "South Carolina" ~ "SEC",
+                          TeamName == "Texas A&M" ~ "SEC",
+                          TeamName == "Vanderbilt" ~ "SEC",
+                          TRUE ~ "Mid-Major"))
+
+#######################################################################
+
+final_15 <- read.csv("~/R/NCAAB Analysis/Madness Analytics/When the Numbers Lie/final_15.csv") %>%
+  arrange(TeamName)
+
+pt_15 <- read.csv("~/R/NCAAB Analysis/Madness Analytics/When the Numbers Lie/pt_15.csv") %>%
+  arrange(TeamName)
+
+final_15 <- cbind.data.frame(final_15, pt_15$seed)
+
+final_15 <- final_15 %>%
+  rename(seed = `pt_15$seed`)
+
+final_15 <- final_15 %>%
+  mutate(Conf = case_when(TeamName == "Ohio St." ~ "Big Ten",
+                          TeamName == "Nebraska" ~ "Big Ten",
+                          TeamName == "Iowa" ~ "Big Ten",
+                          TeamName == "Illinois" ~ "Big Ten",
+                          TeamName == "Indiana" ~ "Big Ten",
+                          TeamName == "Maryland" ~ "Big Ten",
+                          TeamName == "Michigan" ~ "Big Ten",
+                          TeamName == "Michigan St." ~ "Big Ten",
+                          TeamName == "Minnesota" ~ "Big Ten",
+                          TeamName == "Northwestern" ~ "Big Ten",
+                          TeamName == "Penn St." ~ "Big Ten",
+                          TeamName == "Purdue" ~ "Big Ten",
+                          TeamName == "Rutgers" ~ "Big Ten",
+                          TeamName == "Wisconsin" ~ "Big Ten",
+                          TeamName == "Virginia" ~ "ACC",
+                          TeamName == "Florida St." ~ "ACC",
+                          TeamName == "Virginia Tech" ~ "ACC",
+                          TeamName == "Georgia Tech" ~ "ACC",
+                          TeamName == "Clemson" ~ "ACC",
+                          TeamName == "North Carolina" ~ "ACC",
+                          TeamName == "Louisville" ~ "ACC",
+                          TeamName == "Syracuse" ~ "ACC",
+                          TeamName == "N.C. State" ~ "ACC",
+                          TeamName == "Duke" ~ "ACC",
+                          TeamName == "Notre Dame" ~ "ACC",
+                          TeamName == "Pittsburgh" ~ "ACC",
+                          TeamName == "Miami FL" ~ "ACC",
+                          TeamName == "Wake Forest" ~ "ACC",
+                          TeamName == "Boston College" ~ "ACC",
+                          TeamName == "Baylor" ~ "Big 12",
+                          TeamName == "Kansas" ~ "Big 12",
+                          TeamName == "Texas" ~ "Big 12",
+                          TeamName == "West Virginia" ~ "Big 12",
+                          TeamName == "Oklahoma St." ~ "Big 12",
+                          TeamName == "Texas Tech" ~ "Big 12",
+                          TeamName == "Oklahoma" ~ "Big 12",
+                          TeamName == "TCU" ~ "Big 12",
+                          TeamName == "Kansas St." ~ "Big 12",
+                          TeamName == "Iowa St." ~ "Big 12",
+                          TeamName == "Oregon" ~ "Pac 12",
+                          TeamName == "USC" ~ "Pac 12",
+                          TeamName == "Colorado" ~ "Pac 12",
+                          TeamName == "UCLA" ~ "Pac 12",
+                          TeamName == "Arizona" ~ "Pac 12",
+                          TeamName == "Oregon St." ~ "Pac 12",
+                          TeamName == "Stanford" ~ "Pac 12",
+                          TeamName == "Utah" ~ "Pac 12",
+                          TeamName == "Arizona St." ~ "Pac 12",
+                          TeamName == "Washington St." ~ "Pac 12",
+                          TeamName == "Washington" ~ "Pac 12",
+                          TeamName == "California" ~ "Pac 12",
+                          TeamName == "Villanova" ~ "Big East",
+                          TeamName == "Creighton" ~ "Big East",
+                          TeamName == "St. John's" ~ "Big East",
+                          TeamName == "Seton Hall" ~ "Big East",
+                          TeamName == "Providence" ~ "Big East",
+                          TeamName == "Xavier" ~ "Big East",
+                          TeamName == "Georgetown" ~ "Big East",
+                          TeamName == "Marquette" ~ "Big East",
+                          TeamName == "Butler" ~ "Big East",
+                          TeamName == "DePaul" ~ "Big East",
+                          TeamName == "Alabama" ~ "SEC",
+                          TeamName == "Arkansas" ~ "SEC",
+                          TeamName == "LSU" ~ "SEC",
+                          TeamName == "Tennessee" ~ "SEC",
+                          TeamName == "Florida" ~ "SEC",
+                          TeamName == "Mississippi" ~ "SEC",
+                          TeamName == "Missouri" ~ "SEC",
+                          TeamName == "Kentucky" ~ "SEC",
+                          TeamName == "Mississippi St." ~ "SEC",
+                          TeamName == "Georgia" ~ "SEC",
+                          TeamName == "Auburn" ~ "SEC",
+                          TeamName == "South Carolina" ~ "SEC",
+                          TeamName == "Texas A&M" ~ "SEC",
+                          TeamName == "Vanderbilt" ~ "SEC",
+                          TRUE ~ "Mid-Major"))
+
+pt_15 <- pt_15 %>%
+  mutate(Conf = case_when(TeamName == "Ohio St." ~ "Big Ten",
+                          TeamName == "Nebraska" ~ "Big Ten",
+                          TeamName == "Iowa" ~ "Big Ten",
+                          TeamName == "Illinois" ~ "Big Ten",
+                          TeamName == "Indiana" ~ "Big Ten",
+                          TeamName == "Maryland" ~ "Big Ten",
+                          TeamName == "Michigan" ~ "Big Ten",
+                          TeamName == "Michigan St." ~ "Big Ten",
+                          TeamName == "Minnesota" ~ "Big Ten",
+                          TeamName == "Northwestern" ~ "Big Ten",
+                          TeamName == "Penn St." ~ "Big Ten",
+                          TeamName == "Purdue" ~ "Big Ten",
+                          TeamName == "Rutgers" ~ "Big Ten",
+                          TeamName == "Wisconsin" ~ "Big Ten",
+                          TeamName == "Virginia" ~ "ACC",
+                          TeamName == "Florida St." ~ "ACC",
+                          TeamName == "Virginia Tech" ~ "ACC",
+                          TeamName == "Georgia Tech" ~ "ACC",
+                          TeamName == "Clemson" ~ "ACC",
+                          TeamName == "North Carolina" ~ "ACC",
+                          TeamName == "Louisville" ~ "ACC",
+                          TeamName == "Syracuse" ~ "ACC",
+                          TeamName == "N.C. State" ~ "ACC",
+                          TeamName == "Duke" ~ "ACC",
+                          TeamName == "Notre Dame" ~ "ACC",
+                          TeamName == "Pittsburgh" ~ "ACC",
+                          TeamName == "Miami FL" ~ "ACC",
+                          TeamName == "Wake Forest" ~ "ACC",
+                          TeamName == "Boston College" ~ "ACC",
+                          TeamName == "Baylor" ~ "Big 12",
+                          TeamName == "Kansas" ~ "Big 12",
+                          TeamName == "Texas" ~ "Big 12",
+                          TeamName == "West Virginia" ~ "Big 12",
+                          TeamName == "Oklahoma St." ~ "Big 12",
+                          TeamName == "Texas Tech" ~ "Big 12",
+                          TeamName == "Oklahoma" ~ "Big 12",
+                          TeamName == "TCU" ~ "Big 12",
+                          TeamName == "Kansas St." ~ "Big 12",
+                          TeamName == "Iowa St." ~ "Big 12",
+                          TeamName == "Oregon" ~ "Pac 12",
+                          TeamName == "USC" ~ "Pac 12",
+                          TeamName == "Colorado" ~ "Pac 12",
+                          TeamName == "UCLA" ~ "Pac 12",
+                          TeamName == "Arizona" ~ "Pac 12",
+                          TeamName == "Oregon St." ~ "Pac 12",
+                          TeamName == "Stanford" ~ "Pac 12",
+                          TeamName == "Utah" ~ "Pac 12",
+                          TeamName == "Arizona St." ~ "Pac 12",
+                          TeamName == "Washington St." ~ "Pac 12",
+                          TeamName == "Washington" ~ "Pac 12",
+                          TeamName == "California" ~ "Pac 12",
+                          TeamName == "Villanova" ~ "Big East",
+                          TeamName == "Creighton" ~ "Big East",
+                          TeamName == "St. John's" ~ "Big East",
+                          TeamName == "Seton Hall" ~ "Big East",
+                          TeamName == "Providence" ~ "Big East",
+                          TeamName == "Xavier" ~ "Big East",
+                          TeamName == "Georgetown" ~ "Big East",
+                          TeamName == "Marquette" ~ "Big East",
+                          TeamName == "Butler" ~ "Big East",
+                          TeamName == "DePaul" ~ "Big East",
+                          TeamName == "Alabama" ~ "SEC",
+                          TeamName == "Arkansas" ~ "SEC",
+                          TeamName == "LSU" ~ "SEC",
+                          TeamName == "Tennessee" ~ "SEC",
+                          TeamName == "Florida" ~ "SEC",
+                          TeamName == "Mississippi" ~ "SEC",
+                          TeamName == "Missouri" ~ "SEC",
+                          TeamName == "Kentucky" ~ "SEC",
+                          TeamName == "Mississippi St." ~ "SEC",
+                          TeamName == "Georgia" ~ "SEC",
+                          TeamName == "Auburn" ~ "SEC",
+                          TeamName == "South Carolina" ~ "SEC",
+                          TeamName == "Texas A&M" ~ "SEC",
+                          TeamName == "Vanderbilt" ~ "SEC",
+                          TRUE ~ "Mid-Major"))
+
+#######################################################################
+
+final_14 <- read.csv("~/R/NCAAB Analysis/Madness Analytics/When the Numbers Lie/final_14.csv") %>%
+  arrange(TeamName)
+
+pt_14 <- read.csv("~/R/NCAAB Analysis/Madness Analytics/When the Numbers Lie/pt_14.csv") %>%
+  arrange(TeamName)
+
+final_14 <- cbind.data.frame(final_14, pt_14$seed)
+
+final_14 <- final_14 %>%
+  rename(seed = `pt_14$seed`)
+
+final_14 <- final_14 %>%
+  mutate(Conf = case_when(TeamName == "Ohio St." ~ "Big Ten",
+                          TeamName == "Nebraska" ~ "Big Ten",
+                          TeamName == "Iowa" ~ "Big Ten",
+                          TeamName == "Illinois" ~ "Big Ten",
+                          TeamName == "Indiana" ~ "Big Ten",
+                          TeamName == "Maryland" ~ "ACC",
+                          TeamName == "Michigan" ~ "Big Ten",
+                          TeamName == "Michigan St." ~ "Big Ten",
+                          TeamName == "Minnesota" ~ "Big Ten",
+                          TeamName == "Northwestern" ~ "Big Ten",
+                          TeamName == "Penn St." ~ "Big Ten",
+                          TeamName == "Purdue" ~ "Big Ten",
+                          TeamName == "Rutgers" ~ "Big East",
+                          TeamName == "Wisconsin" ~ "Big Ten",
+                          TeamName == "Virginia" ~ "ACC",
+                          TeamName == "Florida St." ~ "ACC",
+                          TeamName == "Virginia Tech" ~ "ACC",
+                          TeamName == "Georgia Tech" ~ "ACC",
+                          TeamName == "Clemson" ~ "ACC",
+                          TeamName == "North Carolina" ~ "ACC",
+                          TeamName == "Syracuse" ~ "ACC",
+                          TeamName == "N.C. State" ~ "ACC",
+                          TeamName == "Duke" ~ "ACC",
+                          TeamName == "Notre Dame" ~ "ACC",
+                          TeamName == "Pittsburgh" ~ "ACC",
+                          TeamName == "Miami FL" ~ "ACC",
+                          TeamName == "Wake Forest" ~ "ACC",
+                          TeamName == "Boston College" ~ "ACC",
+                          TeamName == "Baylor" ~ "Big 12",
+                          TeamName == "Kansas" ~ "Big 12",
+                          TeamName == "Texas" ~ "Big 12",
+                          TeamName == "West Virginia" ~ "Big 12",
+                          TeamName == "Oklahoma St." ~ "Big 12",
+                          TeamName == "Texas Tech" ~ "Big 12",
+                          TeamName == "Oklahoma" ~ "Big 12",
+                          TeamName == "TCU" ~ "Big 12",
+                          TeamName == "Kansas St." ~ "Big 12",
+                          TeamName == "Iowa St." ~ "Big 12",
+                          TeamName == "Oregon" ~ "Pac 12",
+                          TeamName == "USC" ~ "Pac 12",
+                          TeamName == "Colorado" ~ "Pac 12",
+                          TeamName == "UCLA" ~ "Pac 12",
+                          TeamName == "Arizona" ~ "Pac 12",
+                          TeamName == "Oregon St." ~ "Pac 12",
+                          TeamName == "Stanford" ~ "Pac 12",
+                          TeamName == "Utah" ~ "Pac 12",
+                          TeamName == "Arizona St." ~ "Pac 12",
+                          TeamName == "Washington St." ~ "Pac 12",
+                          TeamName == "Washington" ~ "Pac 12",
+                          TeamName == "California" ~ "Pac 12",
+                          TeamName == "Villanova" ~ "Big East",
+                          TeamName == "Creighton" ~ "Big East",
+                          TeamName == "St. John's" ~ "Big East",
+                          TeamName == "Seton Hall" ~ "Big East",
+                          TeamName == "Providence" ~ "Big East",
+                          TeamName == "Xavier" ~ "Big East",
+                          TeamName == "Georgetown" ~ "Big East",
+                          TeamName == "Marquette" ~ "Big East",
+                          TeamName == "Butler" ~ "Big East",
+                          TeamName == "DePaul" ~ "Big East",
+                          TeamName == "Alabama" ~ "SEC",
+                          TeamName == "Arkansas" ~ "SEC",
+                          TeamName == "LSU" ~ "SEC",
+                          TeamName == "Tennessee" ~ "SEC",
+                          TeamName == "Florida" ~ "SEC",
+                          TeamName == "Mississippi" ~ "SEC",
+                          TeamName == "Missouri" ~ "SEC",
+                          TeamName == "Kentucky" ~ "SEC",
+                          TeamName == "Mississippi St." ~ "SEC",
+                          TeamName == "Georgia" ~ "SEC",
+                          TeamName == "Auburn" ~ "SEC",
+                          TeamName == "South Carolina" ~ "SEC",
+                          TeamName == "Texas A&M" ~ "SEC",
+                          TeamName == "Vanderbilt" ~ "SEC",
+                          TRUE ~ "Mid-Major"))
+
+pt_14 <- pt_14 %>%
+  mutate(Conf = case_when(TeamName == "Ohio St." ~ "Big Ten",
+                          TeamName == "Nebraska" ~ "Big Ten",
+                          TeamName == "Iowa" ~ "Big Ten",
+                          TeamName == "Illinois" ~ "Big Ten",
+                          TeamName == "Indiana" ~ "Big Ten",
+                          TeamName == "Maryland" ~ "ACC",
+                          TeamName == "Michigan" ~ "Big Ten",
+                          TeamName == "Michigan St." ~ "Big Ten",
+                          TeamName == "Minnesota" ~ "Big Ten",
+                          TeamName == "Northwestern" ~ "Big Ten",
+                          TeamName == "Penn St." ~ "Big Ten",
+                          TeamName == "Purdue" ~ "Big Ten",
+                          TeamName == "Rutgers" ~ "Big East",
+                          TeamName == "Wisconsin" ~ "Big Ten",
+                          TeamName == "Virginia" ~ "ACC",
+                          TeamName == "Florida St." ~ "ACC",
+                          TeamName == "Virginia Tech" ~ "ACC",
+                          TeamName == "Georgia Tech" ~ "ACC",
+                          TeamName == "Clemson" ~ "ACC",
+                          TeamName == "North Carolina" ~ "ACC",
+                          TeamName == "Syracuse" ~ "ACC",
+                          TeamName == "N.C. State" ~ "ACC",
+                          TeamName == "Duke" ~ "ACC",
+                          TeamName == "Notre Dame" ~ "ACC",
+                          TeamName == "Pittsburgh" ~ "ACC",
+                          TeamName == "Miami FL" ~ "ACC",
+                          TeamName == "Wake Forest" ~ "ACC",
+                          TeamName == "Boston College" ~ "ACC",
+                          TeamName == "Baylor" ~ "Big 12",
+                          TeamName == "Kansas" ~ "Big 12",
+                          TeamName == "Texas" ~ "Big 12",
+                          TeamName == "West Virginia" ~ "Big 12",
+                          TeamName == "Oklahoma St." ~ "Big 12",
+                          TeamName == "Texas Tech" ~ "Big 12",
+                          TeamName == "Oklahoma" ~ "Big 12",
+                          TeamName == "TCU" ~ "Big 12",
+                          TeamName == "Kansas St." ~ "Big 12",
+                          TeamName == "Iowa St." ~ "Big 12",
+                          TeamName == "Oregon" ~ "Pac 12",
+                          TeamName == "USC" ~ "Pac 12",
+                          TeamName == "Colorado" ~ "Pac 12",
+                          TeamName == "UCLA" ~ "Pac 12",
+                          TeamName == "Arizona" ~ "Pac 12",
+                          TeamName == "Oregon St." ~ "Pac 12",
+                          TeamName == "Stanford" ~ "Pac 12",
+                          TeamName == "Utah" ~ "Pac 12",
+                          TeamName == "Arizona St." ~ "Pac 12",
+                          TeamName == "Washington St." ~ "Pac 12",
+                          TeamName == "Washington" ~ "Pac 12",
+                          TeamName == "California" ~ "Pac 12",
+                          TeamName == "Villanova" ~ "Big East",
+                          TeamName == "Creighton" ~ "Big East",
+                          TeamName == "St. John's" ~ "Big East",
+                          TeamName == "Seton Hall" ~ "Big East",
+                          TeamName == "Providence" ~ "Big East",
+                          TeamName == "Xavier" ~ "Big East",
+                          TeamName == "Georgetown" ~ "Big East",
+                          TeamName == "Marquette" ~ "Big East",
+                          TeamName == "Butler" ~ "Big East",
+                          TeamName == "DePaul" ~ "Big East",
+                          TeamName == "Alabama" ~ "SEC",
+                          TeamName == "Arkansas" ~ "SEC",
+                          TeamName == "LSU" ~ "SEC",
+                          TeamName == "Tennessee" ~ "SEC",
+                          TeamName == "Florida" ~ "SEC",
+                          TeamName == "Mississippi" ~ "SEC",
+                          TeamName == "Missouri" ~ "SEC",
+                          TeamName == "Kentucky" ~ "SEC",
+                          TeamName == "Mississippi St." ~ "SEC",
+                          TeamName == "Georgia" ~ "SEC",
+                          TeamName == "Auburn" ~ "SEC",
+                          TeamName == "South Carolina" ~ "SEC",
+                          TeamName == "Texas A&M" ~ "SEC",
+                          TeamName == "Vanderbilt" ~ "SEC",
+                          TRUE ~ "Mid-Major"))
+
+#######################################################################
+
+final_13 <- read.csv("~/R/NCAAB Analysis/Madness Analytics/When the Numbers Lie/final_13.csv") %>%
+  arrange(TeamName)
+
+pt_13 <- read.csv("~/R/NCAAB Analysis/Madness Analytics/When the Numbers Lie/pt_13.csv") %>%
+  arrange(TeamName)
+
+final_13 <- cbind.data.frame(final_13, pt_13$seed)
+
+final_13 <- final_13 %>%
+  rename(seed = `pt_13$seed`)
+
+final_13 <- final_13 %>%
+  mutate(Conf = case_when(TeamName == "Ohio St." ~ "Big Ten",
+                          TeamName == "Nebraska" ~ "Big Ten",
+                          TeamName == "Iowa" ~ "Big Ten",
+                          TeamName == "Illinois" ~ "Big Ten",
+                          TeamName == "Indiana" ~ "Big Ten",
+                          TeamName == "Maryland" ~ "ACC",
+                          TeamName == "Michigan" ~ "Big Ten",
+                          TeamName == "Michigan St." ~ "Big Ten",
+                          TeamName == "Minnesota" ~ "Big Ten",
+                          TeamName == "Northwestern" ~ "Big Ten",
+                          TeamName == "Penn St." ~ "Big Ten",
+                          TeamName == "Purdue" ~ "Big Ten",
+                          TeamName == "Rutgers" ~ "Big East",
+                          TeamName == "Wisconsin" ~ "Big Ten",
+                          TeamName == "Virginia" ~ "ACC",
+                          TeamName == "Florida St." ~ "ACC",
+                          TeamName == "Virginia Tech" ~ "ACC",
+                          TeamName == "Georgia Tech" ~ "ACC",
+                          TeamName == "Clemson" ~ "ACC",
+                          TeamName == "North Carolina" ~ "ACC",
+                          TeamName == "Louisville" ~ "Big East",
+                          TeamName == "Syracuse" ~ "Big East",
+                          TeamName == "N.C. State" ~ "ACC",
+                          TeamName == "Duke" ~ "ACC",
+                          TeamName == "Notre Dame" ~ "Big East",
+                          TeamName == "Pittsburgh" ~ "Big East",
+                          TeamName == "Miami FL" ~ "ACC",
+                          TeamName == "Wake Forest" ~ "ACC",
+                          TeamName == "Boston College" ~ "ACC",
+                          TeamName == "Baylor" ~ "Big 12",
+                          TeamName == "Kansas" ~ "Big 12",
+                          TeamName == "Texas" ~ "Big 12",
+                          TeamName == "West Virginia" ~ "Big 12",
+                          TeamName == "Oklahoma St." ~ "Big 12",
+                          TeamName == "Texas Tech" ~ "Big 12",
+                          TeamName == "Oklahoma" ~ "Big 12",
+                          TeamName == "TCU" ~ "Big 12",
+                          TeamName == "Kansas St." ~ "Big 12",
+                          TeamName == "Iowa St." ~ "Big 12",
+                          TeamName == "Oregon" ~ "Pac 12",
+                          TeamName == "USC" ~ "Pac 12",
+                          TeamName == "Colorado" ~ "Pac 12",
+                          TeamName == "UCLA" ~ "Pac 12",
+                          TeamName == "Arizona" ~ "Pac 12",
+                          TeamName == "Oregon St." ~ "Pac 12",
+                          TeamName == "Stanford" ~ "Pac 12",
+                          TeamName == "Utah" ~ "Pac 12",
+                          TeamName == "Arizona St." ~ "Pac 12",
+                          TeamName == "Washington St." ~ "Pac 12",
+                          TeamName == "Washington" ~ "Pac 12",
+                          TeamName == "California" ~ "Pac 12",
+                          TeamName == "Villanova" ~ "Big East",
+                          TeamName == "Cincinnati" ~ "Big East",
+                          TeamName == "Connecticut" ~ "Big East",
+                          TeamName == "St. John's" ~ "Big East",
+                          TeamName == "Seton Hall" ~ "Big East",
+                          TeamName == "Providence" ~ "Big East",
+                          TeamName == "South Florida" ~ "Big East",
+                          TeamName == "Georgetown" ~ "Big East",
+                          TeamName == "Marquette" ~ "Big East",
+                          TeamName == "DePaul" ~ "Big East",
+                          TeamName == "Alabama" ~ "SEC",
+                          TeamName == "Arkansas" ~ "SEC",
+                          TeamName == "LSU" ~ "SEC",
+                          TeamName == "Tennessee" ~ "SEC",
+                          TeamName == "Florida" ~ "SEC",
+                          TeamName == "Mississippi" ~ "SEC",
+                          TeamName == "Missouri" ~ "SEC",
+                          TeamName == "Kentucky" ~ "SEC",
+                          TeamName == "Mississippi St." ~ "SEC",
+                          TeamName == "Georgia" ~ "SEC",
+                          TeamName == "Auburn" ~ "SEC",
+                          TeamName == "South Carolina" ~ "SEC",
+                          TeamName == "Texas A&M" ~ "SEC",
+                          TeamName == "Vanderbilt" ~ "SEC",
+                          TRUE ~ "Mid-Major"))
+
+pt_13 <- pt_13 %>%
+  mutate(Conf = case_when(TeamName == "Ohio St." ~ "Big Ten",
+                          TeamName == "Nebraska" ~ "Big Ten",
+                          TeamName == "Iowa" ~ "Big Ten",
+                          TeamName == "Illinois" ~ "Big Ten",
+                          TeamName == "Indiana" ~ "Big Ten",
+                          TeamName == "Maryland" ~ "ACC",
+                          TeamName == "Michigan" ~ "Big Ten",
+                          TeamName == "Michigan St." ~ "Big Ten",
+                          TeamName == "Minnesota" ~ "Big Ten",
+                          TeamName == "Northwestern" ~ "Big Ten",
+                          TeamName == "Penn St." ~ "Big Ten",
+                          TeamName == "Purdue" ~ "Big Ten",
+                          TeamName == "Rutgers" ~ "Big East",
+                          TeamName == "Wisconsin" ~ "Big Ten",
+                          TeamName == "Virginia" ~ "ACC",
+                          TeamName == "Florida St." ~ "ACC",
+                          TeamName == "Virginia Tech" ~ "ACC",
+                          TeamName == "Georgia Tech" ~ "ACC",
+                          TeamName == "Clemson" ~ "ACC",
+                          TeamName == "North Carolina" ~ "ACC",
+                          TeamName == "Louisville" ~ "Big East",
+                          TeamName == "Syracuse" ~ "Big East",
+                          TeamName == "N.C. State" ~ "ACC",
+                          TeamName == "Duke" ~ "ACC",
+                          TeamName == "Notre Dame" ~ "Big East",
+                          TeamName == "Pittsburgh" ~ "Big East",
+                          TeamName == "Miami FL" ~ "ACC",
+                          TeamName == "Wake Forest" ~ "ACC",
+                          TeamName == "Boston College" ~ "ACC",
+                          TeamName == "Baylor" ~ "Big 12",
+                          TeamName == "Kansas" ~ "Big 12",
+                          TeamName == "Texas" ~ "Big 12",
+                          TeamName == "West Virginia" ~ "Big 12",
+                          TeamName == "Oklahoma St." ~ "Big 12",
+                          TeamName == "Texas Tech" ~ "Big 12",
+                          TeamName == "Oklahoma" ~ "Big 12",
+                          TeamName == "TCU" ~ "Big 12",
+                          TeamName == "Kansas St." ~ "Big 12",
+                          TeamName == "Iowa St." ~ "Big 12",
+                          TeamName == "Oregon" ~ "Pac 12",
+                          TeamName == "USC" ~ "Pac 12",
+                          TeamName == "Colorado" ~ "Pac 12",
+                          TeamName == "UCLA" ~ "Pac 12",
+                          TeamName == "Arizona" ~ "Pac 12",
+                          TeamName == "Oregon St." ~ "Pac 12",
+                          TeamName == "Stanford" ~ "Pac 12",
+                          TeamName == "Utah" ~ "Pac 12",
+                          TeamName == "Arizona St." ~ "Pac 12",
+                          TeamName == "Washington St." ~ "Pac 12",
+                          TeamName == "Washington" ~ "Pac 12",
+                          TeamName == "California" ~ "Pac 12",
+                          TeamName == "Villanova" ~ "Big East",
+                          TeamName == "Cincinnati" ~ "Big East",
+                          TeamName == "Connecticut" ~ "Big East",
+                          TeamName == "St. John's" ~ "Big East",
+                          TeamName == "Seton Hall" ~ "Big East",
+                          TeamName == "Providence" ~ "Big East",
+                          TeamName == "South Florida" ~ "Big East",
+                          TeamName == "Georgetown" ~ "Big East",
+                          TeamName == "Marquette" ~ "Big East",
+                          TeamName == "DePaul" ~ "Big East",
+                          TeamName == "Alabama" ~ "SEC",
+                          TeamName == "Arkansas" ~ "SEC",
+                          TeamName == "LSU" ~ "SEC",
+                          TeamName == "Tennessee" ~ "SEC",
+                          TeamName == "Florida" ~ "SEC",
+                          TeamName == "Mississippi" ~ "SEC",
+                          TeamName == "Missouri" ~ "SEC",
+                          TeamName == "Kentucky" ~ "SEC",
+                          TeamName == "Mississippi St." ~ "SEC",
+                          TeamName == "Georgia" ~ "SEC",
+                          TeamName == "Auburn" ~ "SEC",
+                          TeamName == "South Carolina" ~ "SEC",
+                          TeamName == "Texas A&M" ~ "SEC",
+                          TeamName == "Vanderbilt" ~ "SEC",
+                          TRUE ~ "Mid-Major"))
+
+#######################################################################
+
+final_12 <- read.csv("~/R/NCAAB Analysis/Madness Analytics/When the Numbers Lie/final_12.csv") %>%
+  arrange(TeamName)
+
+pt_12 <- read.csv("~/R/NCAAB Analysis/Madness Analytics/When the Numbers Lie/pt_12.csv") %>%
+  arrange(TeamName)
+
+final_12 <- cbind.data.frame(final_12, pt_12$seed)
+
+final_12 <- final_12 %>%
+  rename(seed = `pt_12$seed`)
+
+final_12 <- final_12 %>%
+  mutate(Conf = case_when(TeamName == "Ohio St." ~ "Big Ten",
+                          TeamName == "Nebraska" ~ "Big Ten",
+                          TeamName == "Iowa" ~ "Big Ten",
+                          TeamName == "Illinois" ~ "Big Ten",
+                          TeamName == "Indiana" ~ "Big Ten",
+                          TeamName == "Maryland" ~ "ACC",
+                          TeamName == "Michigan" ~ "Big Ten",
+                          TeamName == "Michigan St." ~ "Big Ten",
+                          TeamName == "Minnesota" ~ "Big Ten",
+                          TeamName == "Northwestern" ~ "Big Ten",
+                          TeamName == "Penn St." ~ "Big Ten",
+                          TeamName == "Purdue" ~ "Big Ten",
+                          TeamName == "Rutgers" ~ "Big East",
+                          TeamName == "Wisconsin" ~ "Big Ten",
+                          TeamName == "Virginia" ~ "ACC",
+                          TeamName == "Florida St." ~ "ACC",
+                          TeamName == "Virginia Tech" ~ "ACC",
+                          TeamName == "Georgia Tech" ~ "ACC",
+                          TeamName == "Clemson" ~ "ACC",
+                          TeamName == "North Carolina" ~ "ACC",
+                          TeamName == "Louisville" ~ "Big East",
+                          TeamName == "Syracuse" ~ "Big East",
+                          TeamName == "N.C. State" ~ "ACC",
+                          TeamName == "Duke" ~ "ACC",
+                          TeamName == "Notre Dame" ~ "Big East",
+                          TeamName == "Pittsburgh" ~ "Big East",
+                          TeamName == "Miami FL" ~ "ACC",
+                          TeamName == "Wake Forest" ~ "ACC",
+                          TeamName == "Boston College" ~ "ACC",
+                          TeamName == "Baylor" ~ "Big 12",
+                          TeamName == "Kansas" ~ "Big 12",
+                          TeamName == "Texas" ~ "Big 12",
+                          TeamName == "West Virginia" ~ "Big East",
+                          TeamName == "Oklahoma St." ~ "Big 12",
+                          TeamName == "Texas Tech" ~ "Big 12",
+                          TeamName == "Oklahoma" ~ "Big 12",
+                          TeamName == "Kansas St." ~ "Big 12",
+                          TeamName == "Iowa St." ~ "Big 12",
+                          TeamName == "Oregon" ~ "Pac 12",
+                          TeamName == "USC" ~ "Pac 12",
+                          TeamName == "Colorado" ~ "Pac 12",
+                          TeamName == "UCLA" ~ "Pac 12",
+                          TeamName == "Arizona" ~ "Pac 12",
+                          TeamName == "Oregon St." ~ "Pac 12",
+                          TeamName == "Stanford" ~ "Pac 12",
+                          TeamName == "Utah" ~ "Pac 12",
+                          TeamName == "Arizona St." ~ "Pac 12",
+                          TeamName == "Washington St." ~ "Pac 12",
+                          TeamName == "Washington" ~ "Pac 12",
+                          TeamName == "California" ~ "Pac 12",
+                          TeamName == "Villanova" ~ "Big East",
+                          TeamName == "Cincinnati" ~ "Big East",
+                          TeamName == "Connecticut" ~ "Big East",
+                          TeamName == "St. John's" ~ "Big East",
+                          TeamName == "Seton Hall" ~ "Big East",
+                          TeamName == "Providence" ~ "Big East",
+                          TeamName == "South Florida" ~ "Big East",
+                          TeamName == "Georgetown" ~ "Big East",
+                          TeamName == "Marquette" ~ "Big East",
+                          TeamName == "DePaul" ~ "Big East",
+                          TeamName == "Alabama" ~ "SEC",
+                          TeamName == "Arkansas" ~ "SEC",
+                          TeamName == "LSU" ~ "SEC",
+                          TeamName == "Tennessee" ~ "SEC",
+                          TeamName == "Florida" ~ "SEC",
+                          TeamName == "Mississippi" ~ "SEC",
+                          TeamName == "Missouri" ~ "Big 12",
+                          TeamName == "Kentucky" ~ "SEC",
+                          TeamName == "Mississippi St." ~ "SEC",
+                          TeamName == "Georgia" ~ "SEC",
+                          TeamName == "Auburn" ~ "SEC",
+                          TeamName == "South Carolina" ~ "SEC",
+                          TeamName == "Texas A&M" ~ "Big 12",
+                          TeamName == "Vanderbilt" ~ "SEC",
+                          TRUE ~ "Mid-Major"))
+
+pt_12 <- pt_12 %>%
+  mutate(Conf = case_when(TeamName == "Ohio St." ~ "Big Ten",
+                          TeamName == "Nebraska" ~ "Big Ten",
+                          TeamName == "Iowa" ~ "Big Ten",
+                          TeamName == "Illinois" ~ "Big Ten",
+                          TeamName == "Indiana" ~ "Big Ten",
+                          TeamName == "Maryland" ~ "ACC",
+                          TeamName == "Michigan" ~ "Big Ten",
+                          TeamName == "Michigan St." ~ "Big Ten",
+                          TeamName == "Minnesota" ~ "Big Ten",
+                          TeamName == "Northwestern" ~ "Big Ten",
+                          TeamName == "Penn St." ~ "Big Ten",
+                          TeamName == "Purdue" ~ "Big Ten",
+                          TeamName == "Rutgers" ~ "Big East",
+                          TeamName == "Wisconsin" ~ "Big Ten",
+                          TeamName == "Virginia" ~ "ACC",
+                          TeamName == "Florida St." ~ "ACC",
+                          TeamName == "Virginia Tech" ~ "ACC",
+                          TeamName == "Georgia Tech" ~ "ACC",
+                          TeamName == "Clemson" ~ "ACC",
+                          TeamName == "North Carolina" ~ "ACC",
+                          TeamName == "Louisville" ~ "Big East",
+                          TeamName == "Syracuse" ~ "Big East",
+                          TeamName == "N.C. State" ~ "ACC",
+                          TeamName == "Duke" ~ "ACC",
+                          TeamName == "Notre Dame" ~ "Big East",
+                          TeamName == "Pittsburgh" ~ "Big East",
+                          TeamName == "Miami FL" ~ "ACC",
+                          TeamName == "Wake Forest" ~ "ACC",
+                          TeamName == "Boston College" ~ "ACC",
+                          TeamName == "Baylor" ~ "Big 12",
+                          TeamName == "Kansas" ~ "Big 12",
+                          TeamName == "Texas" ~ "Big 12",
+                          TeamName == "West Virginia" ~ "Big East",
+                          TeamName == "Oklahoma St." ~ "Big 12",
+                          TeamName == "Texas Tech" ~ "Big 12",
+                          TeamName == "Oklahoma" ~ "Big 12",
+                          TeamName == "Kansas St." ~ "Big 12",
+                          TeamName == "Iowa St." ~ "Big 12",
+                          TeamName == "Oregon" ~ "Pac 12",
+                          TeamName == "USC" ~ "Pac 12",
+                          TeamName == "Colorado" ~ "Pac 12",
+                          TeamName == "UCLA" ~ "Pac 12",
+                          TeamName == "Arizona" ~ "Pac 12",
+                          TeamName == "Oregon St." ~ "Pac 12",
+                          TeamName == "Stanford" ~ "Pac 12",
+                          TeamName == "Utah" ~ "Pac 12",
+                          TeamName == "Arizona St." ~ "Pac 12",
+                          TeamName == "Washington St." ~ "Pac 12",
+                          TeamName == "Washington" ~ "Pac 12",
+                          TeamName == "California" ~ "Pac 12",
+                          TeamName == "Villanova" ~ "Big East",
+                          TeamName == "Cincinnati" ~ "Big East",
+                          TeamName == "Connecticut" ~ "Big East",
+                          TeamName == "St. John's" ~ "Big East",
+                          TeamName == "Seton Hall" ~ "Big East",
+                          TeamName == "Providence" ~ "Big East",
+                          TeamName == "South Florida" ~ "Big East",
+                          TeamName == "Georgetown" ~ "Big East",
+                          TeamName == "Marquette" ~ "Big East",
+                          TeamName == "DePaul" ~ "Big East",
+                          TeamName == "Alabama" ~ "SEC",
+                          TeamName == "Arkansas" ~ "SEC",
+                          TeamName == "LSU" ~ "SEC",
+                          TeamName == "Tennessee" ~ "SEC",
+                          TeamName == "Florida" ~ "SEC",
+                          TeamName == "Mississippi" ~ "SEC",
+                          TeamName == "Missouri" ~ "Big 12",
+                          TeamName == "Kentucky" ~ "SEC",
+                          TeamName == "Mississippi St." ~ "SEC",
+                          TeamName == "Georgia" ~ "SEC",
+                          TeamName == "Auburn" ~ "SEC",
+                          TeamName == "South Carolina" ~ "SEC",
+                          TeamName == "Texas A&M" ~ "Big 12",
+                          TeamName == "Vanderbilt" ~ "SEC",
+                          TRUE ~ "Mid-Major"))
+
+#######################################################################
+
+final_11 <- read.csv("~/R/NCAAB Analysis/Madness Analytics/When the Numbers Lie/final_11.csv") %>%
+  arrange(TeamName)
+
+pt_11 <- read.csv("~/R/NCAAB Analysis/Madness Analytics/When the Numbers Lie/pt_11.csv") %>%
+  arrange(TeamName)
+
+final_11 <- cbind.data.frame(final_11, pt_11$seed)
+
+final_11 <- final_11 %>%
+  rename(seed = `pt_11$seed`)
+
+final_11 <- final_11 %>%
+  mutate(Conf = case_when(TeamName == "Ohio St." ~ "Big Ten",
+                          TeamName == "Nebraska" ~ "Big 12",
+                          TeamName == "Colorado" ~ "Big 12",
+                          TeamName == "Iowa" ~ "Big Ten",
+                          TeamName == "Illinois" ~ "Big Ten",
+                          TeamName == "Indiana" ~ "Big Ten",
+                          TeamName == "Maryland" ~ "ACC",
+                          TeamName == "Michigan" ~ "Big Ten",
+                          TeamName == "Michigan St." ~ "Big Ten",
+                          TeamName == "Minnesota" ~ "Big Ten",
+                          TeamName == "Northwestern" ~ "Big Ten",
+                          TeamName == "Penn St." ~ "Big Ten",
+                          TeamName == "Purdue" ~ "Big Ten",
+                          TeamName == "Rutgers" ~ "Big East",
+                          TeamName == "Wisconsin" ~ "Big Ten",
+                          TeamName == "Virginia" ~ "ACC",
+                          TeamName == "Florida St." ~ "ACC",
+                          TeamName == "Virginia Tech" ~ "ACC",
+                          TeamName == "Georgia Tech" ~ "ACC",
+                          TeamName == "Clemson" ~ "ACC",
+                          TeamName == "North Carolina" ~ "ACC",
+                          TeamName == "Louisville" ~ "Big East",
+                          TeamName == "Syracuse" ~ "Big East",
+                          TeamName == "N.C. State" ~ "ACC",
+                          TeamName == "Duke" ~ "ACC",
+                          TeamName == "Notre Dame" ~ "Big East",
+                          TeamName == "Pittsburgh" ~ "Big East",
+                          TeamName == "Miami FL" ~ "ACC",
+                          TeamName == "Wake Forest" ~ "ACC",
+                          TeamName == "Boston College" ~ "ACC",
+                          TeamName == "Baylor" ~ "Big 12",
+                          TeamName == "Kansas" ~ "Big 12",
+                          TeamName == "Texas" ~ "Big 12",
+                          TeamName == "West Virginia" ~ "Big East",
+                          TeamName == "Oklahoma St." ~ "Big 12",
+                          TeamName == "Texas Tech" ~ "Big 12",
+                          TeamName == "Oklahoma" ~ "Big 12",
+                          TeamName == "TCU" ~ "Big 12",
+                          TeamName == "Kansas St." ~ "Big 12",
+                          TeamName == "Iowa St." ~ "Big 12",
+                          TeamName == "Oregon" ~ "Pac 12",
+                          TeamName == "USC" ~ "Pac 12",
+                          TeamName == "UCLA" ~ "Pac 12",
+                          TeamName == "Arizona" ~ "Pac 12",
+                          TeamName == "Oregon St." ~ "Pac 12",
+                          TeamName == "Stanford" ~ "Pac 12",
+                          TeamName == "Arizona St." ~ "Pac 12",
+                          TeamName == "Washington St." ~ "Pac 12",
+                          TeamName == "Washington" ~ "Pac 12",
+                          TeamName == "California" ~ "Pac 12",
+                          TeamName == "Villanova" ~ "Big East",
+                          TeamName == "Cincinnati" ~ "Big East",
+                          TeamName == "Connecticut" ~ "Big East",
+                          TeamName == "St. John's" ~ "Big East",
+                          TeamName == "Seton Hall" ~ "Big East",
+                          TeamName == "Providence" ~ "Big East",
+                          TeamName == "South Florida" ~ "Big East",
+                          TeamName == "Georgetown" ~ "Big East",
+                          TeamName == "Marquette" ~ "Big East",
+                          TeamName == "DePaul" ~ "Big East",
+                          TeamName == "Alabama" ~ "SEC",
+                          TeamName == "Arkansas" ~ "SEC",
+                          TeamName == "LSU" ~ "SEC",
+                          TeamName == "Tennessee" ~ "SEC",
+                          TeamName == "Florida" ~ "SEC",
+                          TeamName == "Mississippi" ~ "SEC",
+                          TeamName == "Missouri" ~ "Big 12",
+                          TeamName == "Kentucky" ~ "SEC",
+                          TeamName == "Mississippi St." ~ "SEC",
+                          TeamName == "Georgia" ~ "SEC",
+                          TeamName == "Auburn" ~ "SEC",
+                          TeamName == "South Carolina" ~ "SEC",
+                          TeamName == "Texas A&M" ~ "Big 12",
+                          TeamName == "Vanderbilt" ~ "SEC",
+                          TRUE ~ "Mid-Major"))
+
+pt_11 <- pt_11 %>%
+  mutate(Conf = case_when(TeamName == "Ohio St." ~ "Big Ten",
+                          TeamName == "Nebraska" ~ "Big 12",
+                          TeamName == "Colorado" ~ "Big 12",
+                          TeamName == "Iowa" ~ "Big Ten",
+                          TeamName == "Illinois" ~ "Big Ten",
+                          TeamName == "Indiana" ~ "Big Ten",
+                          TeamName == "Maryland" ~ "ACC",
+                          TeamName == "Michigan" ~ "Big Ten",
+                          TeamName == "Michigan St." ~ "Big Ten",
+                          TeamName == "Minnesota" ~ "Big Ten",
+                          TeamName == "Northwestern" ~ "Big Ten",
+                          TeamName == "Penn St." ~ "Big Ten",
+                          TeamName == "Purdue" ~ "Big Ten",
+                          TeamName == "Rutgers" ~ "Big East",
+                          TeamName == "Wisconsin" ~ "Big Ten",
+                          TeamName == "Virginia" ~ "ACC",
+                          TeamName == "Florida St." ~ "ACC",
+                          TeamName == "Virginia Tech" ~ "ACC",
+                          TeamName == "Georgia Tech" ~ "ACC",
+                          TeamName == "Clemson" ~ "ACC",
+                          TeamName == "North Carolina" ~ "ACC",
+                          TeamName == "Louisville" ~ "Big East",
+                          TeamName == "Syracuse" ~ "Big East",
+                          TeamName == "N.C. State" ~ "ACC",
+                          TeamName == "Duke" ~ "ACC",
+                          TeamName == "Notre Dame" ~ "Big East",
+                          TeamName == "Pittsburgh" ~ "Big East",
+                          TeamName == "Miami FL" ~ "ACC",
+                          TeamName == "Wake Forest" ~ "ACC",
+                          TeamName == "Boston College" ~ "ACC",
+                          TeamName == "Baylor" ~ "Big 12",
+                          TeamName == "Kansas" ~ "Big 12",
+                          TeamName == "Texas" ~ "Big 12",
+                          TeamName == "West Virginia" ~ "Big East",
+                          TeamName == "Oklahoma St." ~ "Big 12",
+                          TeamName == "Texas Tech" ~ "Big 12",
+                          TeamName == "Oklahoma" ~ "Big 12",
+                          TeamName == "TCU" ~ "Big 12",
+                          TeamName == "Kansas St." ~ "Big 12",
+                          TeamName == "Iowa St." ~ "Big 12",
+                          TeamName == "Oregon" ~ "Pac 12",
+                          TeamName == "USC" ~ "Pac 12",
+                          TeamName == "UCLA" ~ "Pac 12",
+                          TeamName == "Arizona" ~ "Pac 12",
+                          TeamName == "Oregon St." ~ "Pac 12",
+                          TeamName == "Stanford" ~ "Pac 12",
+                          TeamName == "Arizona St." ~ "Pac 12",
+                          TeamName == "Washington St." ~ "Pac 12",
+                          TeamName == "Washington" ~ "Pac 12",
+                          TeamName == "California" ~ "Pac 12",
+                          TeamName == "Villanova" ~ "Big East",
+                          TeamName == "Cincinnati" ~ "Big East",
+                          TeamName == "Connecticut" ~ "Big East",
+                          TeamName == "St. John's" ~ "Big East",
+                          TeamName == "Seton Hall" ~ "Big East",
+                          TeamName == "Providence" ~ "Big East",
+                          TeamName == "South Florida" ~ "Big East",
+                          TeamName == "Georgetown" ~ "Big East",
+                          TeamName == "Marquette" ~ "Big East",
+                          TeamName == "DePaul" ~ "Big East",
+                          TeamName == "Alabama" ~ "SEC",
+                          TeamName == "Arkansas" ~ "SEC",
+                          TeamName == "LSU" ~ "SEC",
+                          TeamName == "Tennessee" ~ "SEC",
+                          TeamName == "Florida" ~ "SEC",
+                          TeamName == "Mississippi" ~ "SEC",
+                          TeamName == "Missouri" ~ "Big 12",
+                          TeamName == "Kentucky" ~ "SEC",
+                          TeamName == "Mississippi St." ~ "SEC",
+                          TeamName == "Georgia" ~ "SEC",
+                          TeamName == "Auburn" ~ "SEC",
+                          TeamName == "South Carolina" ~ "SEC",
+                          TeamName == "Texas A&M" ~ "Big 12",
+                          TeamName == "Vanderbilt" ~ "SEC",
+                          TRUE ~ "Mid-Major"))
+
+#######################################################################
+
+final_10 <- read.csv("~/R/NCAAB Analysis/Madness Analytics/When the Numbers Lie/final_10.csv") %>%
+  arrange(TeamName)
+
+pt_10 <- read.csv("~/R/NCAAB Analysis/Madness Analytics/When the Numbers Lie/pt_10.csv") %>%
+  arrange(TeamName)
+
+final_10 <- cbind.data.frame(final_10, pt_10$seed)
+
+final_10 <- final_10 %>%
+  rename(seed = `pt_10$seed`)
+
+final_10 <- final_10 %>%
+  mutate(Conf = case_when(TeamName == "Ohio St." ~ "Big Ten",
+                          TeamName == "Nebraska" ~ "Big 12",
+                          TeamName == "Colorado" ~ "Big 12",
+                          TeamName == "Iowa" ~ "Big Ten",
+                          TeamName == "Illinois" ~ "Big Ten",
+                          TeamName == "Indiana" ~ "Big Ten",
+                          TeamName == "Maryland" ~ "ACC",
+                          TeamName == "Michigan" ~ "Big Ten",
+                          TeamName == "Michigan St." ~ "Big Ten",
+                          TeamName == "Minnesota" ~ "Big Ten",
+                          TeamName == "Northwestern" ~ "Big Ten",
+                          TeamName == "Penn St." ~ "Big Ten",
+                          TeamName == "Purdue" ~ "Big Ten",
+                          TeamName == "Rutgers" ~ "Big East",
+                          TeamName == "Wisconsin" ~ "Big Ten",
+                          TeamName == "Virginia" ~ "ACC",
+                          TeamName == "Florida St." ~ "ACC",
+                          TeamName == "Virginia Tech" ~ "ACC",
+                          TeamName == "Georgia Tech" ~ "ACC",
+                          TeamName == "Clemson" ~ "ACC",
+                          TeamName == "North Carolina" ~ "ACC",
+                          TeamName == "Louisville" ~ "Big East",
+                          TeamName == "Syracuse" ~ "Big East",
+                          TeamName == "N.C. State" ~ "ACC",
+                          TeamName == "Duke" ~ "ACC",
+                          TeamName == "Notre Dame" ~ "Big East",
+                          TeamName == "Pittsburgh" ~ "Big East",
+                          TeamName == "Miami FL" ~ "ACC",
+                          TeamName == "Wake Forest" ~ "ACC",
+                          TeamName == "Boston College" ~ "ACC",
+                          TeamName == "Baylor" ~ "Big 12",
+                          TeamName == "Kansas" ~ "Big 12",
+                          TeamName == "Texas" ~ "Big 12",
+                          TeamName == "West Virginia" ~ "Big East",
+                          TeamName == "Oklahoma St." ~ "Big 12",
+                          TeamName == "Texas Tech" ~ "Big 12",
+                          TeamName == "Oklahoma" ~ "Big 12",
+                          TeamName == "TCU" ~ "Big 12",
+                          TeamName == "Kansas St." ~ "Big 12",
+                          TeamName == "Iowa St." ~ "Big 12",
+                          TeamName == "Oregon" ~ "Pac 12",
+                          TeamName == "USC" ~ "Pac 12",
+                          TeamName == "UCLA" ~ "Pac 12",
+                          TeamName == "Arizona" ~ "Pac 12",
+                          TeamName == "Oregon St." ~ "Pac 12",
+                          TeamName == "Stanford" ~ "Pac 12",
+                          TeamName == "Arizona St." ~ "Pac 12",
+                          TeamName == "Washington St." ~ "Pac 12",
+                          TeamName == "Washington" ~ "Pac 12",
+                          TeamName == "California" ~ "Pac 12",
+                          TeamName == "Villanova" ~ "Big East",
+                          TeamName == "Cincinnati" ~ "Big East",
+                          TeamName == "Connecticut" ~ "Big East",
+                          TeamName == "St. John's" ~ "Big East",
+                          TeamName == "Seton Hall" ~ "Big East",
+                          TeamName == "Providence" ~ "Big East",
+                          TeamName == "South Florida" ~ "Big East",
+                          TeamName == "Georgetown" ~ "Big East",
+                          TeamName == "Marquette" ~ "Big East",
+                          TeamName == "DePaul" ~ "Big East",
+                          TeamName == "Alabama" ~ "SEC",
+                          TeamName == "Arkansas" ~ "SEC",
+                          TeamName == "LSU" ~ "SEC",
+                          TeamName == "Tennessee" ~ "SEC",
+                          TeamName == "Florida" ~ "SEC",
+                          TeamName == "Mississippi" ~ "SEC",
+                          TeamName == "Missouri" ~ "Big 12",
+                          TeamName == "Kentucky" ~ "SEC",
+                          TeamName == "Mississippi St." ~ "SEC",
+                          TeamName == "Georgia" ~ "SEC",
+                          TeamName == "Auburn" ~ "SEC",
+                          TeamName == "South Carolina" ~ "SEC",
+                          TeamName == "Texas A&M" ~ "Big 12",
+                          TeamName == "Vanderbilt" ~ "SEC",
+                          TRUE ~ "Mid-Major"))
+
+pt_10 <- pt_10 %>%
+  mutate(Conf = case_when(TeamName == "Ohio St." ~ "Big Ten",
+                          TeamName == "Nebraska" ~ "Big 12",
+                          TeamName == "Colorado" ~ "Big 12",
+                          TeamName == "Iowa" ~ "Big Ten",
+                          TeamName == "Illinois" ~ "Big Ten",
+                          TeamName == "Indiana" ~ "Big Ten",
+                          TeamName == "Maryland" ~ "ACC",
+                          TeamName == "Michigan" ~ "Big Ten",
+                          TeamName == "Michigan St." ~ "Big Ten",
+                          TeamName == "Minnesota" ~ "Big Ten",
+                          TeamName == "Northwestern" ~ "Big Ten",
+                          TeamName == "Penn St." ~ "Big Ten",
+                          TeamName == "Purdue" ~ "Big Ten",
+                          TeamName == "Rutgers" ~ "Big East",
+                          TeamName == "Wisconsin" ~ "Big Ten",
+                          TeamName == "Virginia" ~ "ACC",
+                          TeamName == "Florida St." ~ "ACC",
+                          TeamName == "Virginia Tech" ~ "ACC",
+                          TeamName == "Georgia Tech" ~ "ACC",
+                          TeamName == "Clemson" ~ "ACC",
+                          TeamName == "North Carolina" ~ "ACC",
+                          TeamName == "Louisville" ~ "Big East",
+                          TeamName == "Syracuse" ~ "Big East",
+                          TeamName == "N.C. State" ~ "ACC",
+                          TeamName == "Duke" ~ "ACC",
+                          TeamName == "Notre Dame" ~ "Big East",
+                          TeamName == "Pittsburgh" ~ "Big East",
+                          TeamName == "Miami FL" ~ "ACC",
+                          TeamName == "Wake Forest" ~ "ACC",
+                          TeamName == "Boston College" ~ "ACC",
+                          TeamName == "Baylor" ~ "Big 12",
+                          TeamName == "Kansas" ~ "Big 12",
+                          TeamName == "Texas" ~ "Big 12",
+                          TeamName == "West Virginia" ~ "Big East",
+                          TeamName == "Oklahoma St." ~ "Big 12",
+                          TeamName == "Texas Tech" ~ "Big 12",
+                          TeamName == "Oklahoma" ~ "Big 12",
+                          TeamName == "TCU" ~ "Big 12",
+                          TeamName == "Kansas St." ~ "Big 12",
+                          TeamName == "Iowa St." ~ "Big 12",
+                          TeamName == "Oregon" ~ "Pac 12",
+                          TeamName == "USC" ~ "Pac 12",
+                          TeamName == "UCLA" ~ "Pac 12",
+                          TeamName == "Arizona" ~ "Pac 12",
+                          TeamName == "Oregon St." ~ "Pac 12",
+                          TeamName == "Stanford" ~ "Pac 12",
+                          TeamName == "Arizona St." ~ "Pac 12",
+                          TeamName == "Washington St." ~ "Pac 12",
+                          TeamName == "Washington" ~ "Pac 12",
+                          TeamName == "California" ~ "Pac 12",
+                          TeamName == "Villanova" ~ "Big East",
+                          TeamName == "Cincinnati" ~ "Big East",
+                          TeamName == "Connecticut" ~ "Big East",
+                          TeamName == "St. John's" ~ "Big East",
+                          TeamName == "Seton Hall" ~ "Big East",
+                          TeamName == "Providence" ~ "Big East",
+                          TeamName == "South Florida" ~ "Big East",
+                          TeamName == "Georgetown" ~ "Big East",
+                          TeamName == "Marquette" ~ "Big East",
+                          TeamName == "DePaul" ~ "Big East",
+                          TeamName == "Alabama" ~ "SEC",
+                          TeamName == "Arkansas" ~ "SEC",
+                          TeamName == "LSU" ~ "SEC",
+                          TeamName == "Tennessee" ~ "SEC",
+                          TeamName == "Florida" ~ "SEC",
+                          TeamName == "Mississippi" ~ "SEC",
+                          TeamName == "Missouri" ~ "Big 12",
+                          TeamName == "Kentucky" ~ "SEC",
+                          TeamName == "Mississippi St." ~ "SEC",
+                          TeamName == "Georgia" ~ "SEC",
+                          TeamName == "Auburn" ~ "SEC",
+                          TeamName == "South Carolina" ~ "SEC",
+                          TeamName == "Texas A&M" ~ "Big 12",
+                          TeamName == "Vanderbilt" ~ "SEC",
+                          TRUE ~ "Mid-Major"))
+
+#######################################################################
+
+big10_calculator <- function(final, pt){
+  
+  big10_final <- final %>%
+    filter(Conf == "Big Ten")
+  
+  big10_pt <- pt %>%
+    filter(Conf == "Big Ten")
+  
+  big10_eff_final <- mean(big10_final$AdjEM)
+  
+  big10_eff_pt <- mean(big10_pt$AdjEM)
+  
+  big10_tourn_final <- final %>%
+    filter(Conf == "Big Ten" & is.na(seed) == 0 & seed != "NULL")
+  
+  big10_tourn_pt <- pt %>%
+    filter(Conf == "Big Ten" & is.na(seed) == 0 & seed != "NULL")
+  
+  big10_eff_tourn_final <- mean(big10_tourn_final$AdjEM)
+  
+  big10_eff_tourn_pt <- mean(big10_tourn_pt$AdjEM)
+  
+  big10_diff <- big10_eff_final - big10_eff_pt
+  
+  big10_tourn_diff <- big10_eff_tourn_final - big10_eff_tourn_pt
+  
+  return(c(big10_diff, big10_tourn_diff))
+}
+
+big10_21 <- big10_calculator(final = final_21, pt = pt_21)
+big10_19 <- big10_calculator(final = final_19, pt = pt_19)
+big10_18 <- big10_calculator(final = final_18, pt = pt_18)
+big10_17 <- big10_calculator(final = final_17, pt = pt_17)
+big10_16 <- big10_calculator(final = final_16, pt = pt_16)
+big10_15 <- big10_calculator(final = final_15, pt = pt_15)
+big10_14 <- big10_calculator(final = final_14, pt = pt_14)
+big10_13 <- big10_calculator(final = final_13, pt = pt_13)
+big10_12 <- big10_calculator(final = final_12, pt = pt_12)
+big10_11 <- big10_calculator(final = final_11, pt = pt_11)
+big10_10 <- big10_calculator(final = final_10, pt = pt_10)
+
+big10_changes <- c(big10_10[1],
+                   big10_11[1],
+                   big10_12[1],
+                   big10_13[1],
+                   big10_14[1],
+                   big10_15[1],
+                   big10_16[1],
+                   big10_17[1],
+                   big10_18[1],
+                   big10_19[1],
+                   big10_21[1])
+
+big10_tourn_changes <- c(big10_10[2],
+                         big10_11[2],
+                         big10_12[2],
+                         big10_13[2],
+                         big10_14[2],
+                         big10_15[2],
+                         big10_16[2],
+                         big10_17[2],
+                         big10_18[2],
+                         big10_19[2],
+                         big10_21[2])
+
+pac12_calculator <- function(final, pt){
+  
+  pac12_final <- final %>%
+    filter(Conf == "Pac 12")
+  
+  pac12_pt <- pt %>%
+    filter(Conf == "Pac 12")
+  
+  pac12_eff_final <- mean(pac12_final$AdjEM)
+  
+  pac12_eff_pt <- mean(pac12_pt$AdjEM)
+  
+  pac12_tourn_final <- final %>%
+    filter(Conf == "Pac 12" & is.na(seed) == 0 & seed != "NULL")
+  
+  pac12_tourn_pt <- pt %>%
+    filter(Conf == "Pac 12" & is.na(seed) == 0 & seed != "NULL")
+  
+  pac12_eff_tourn_final <- mean(pac12_tourn_final$AdjEM)
+  
+  pac12_eff_tourn_pt <- mean(pac12_tourn_pt$AdjEM)
+  
+  pac12_diff <- pac12_eff_final - pac12_eff_pt
+  
+  pac12_tourn_diff <- pac12_eff_tourn_final - pac12_eff_tourn_pt
+  
+  return(c(pac12_diff, pac12_tourn_diff))
+}
+
+pac12_21 <- pac12_calculator(final = final_21, pt = pt_21)
+pac12_19 <- pac12_calculator(final = final_19, pt = pt_19)
+pac12_18 <- pac12_calculator(final = final_18, pt = pt_18)
+pac12_17 <- pac12_calculator(final = final_17, pt = pt_17)
+pac12_16 <- pac12_calculator(final = final_16, pt = pt_16)
+pac12_15 <- pac12_calculator(final = final_15, pt = pt_15)
+pac12_14 <- pac12_calculator(final = final_14, pt = pt_14)
+pac12_13 <- pac12_calculator(final = final_13, pt = pt_13)
+pac12_12 <- pac12_calculator(final = final_12, pt = pt_12)
+pac12_11 <- pac12_calculator(final = final_11, pt = pt_11)
+pac12_10 <- pac12_calculator(final = final_10, pt = pt_10)
+
+pac12_changes <- c(pac12_10[1],
+                   pac12_11[1],
+                   pac12_12[1],
+                   pac12_13[1],
+                   pac12_14[1],
+                   pac12_15[1],
+                   pac12_16[1],
+                   pac12_17[1],
+                   pac12_18[1],
+                   pac12_19[1],
+                   pac12_21[1])
+
+pac12_tourn_changes <- c(pac12_10[2],
+                         pac12_11[2],
+                         pac12_12[2],
+                         pac12_13[2],
+                         pac12_14[2],
+                         pac12_15[2],
+                         pac12_16[2],
+                         pac12_17[2],
+                         pac12_18[2],
+                         pac12_19[2],
+                         pac12_21[2])
+
+acc_calculator <- function(final, pt){
+  
+  acc_final <- final %>%
+    filter(Conf == "ACC")
+  
+  acc_pt <- pt %>%
+    filter(Conf == "ACC")
+  
+  acc_eff_final <- mean(acc_final$AdjEM)
+  
+  acc_eff_pt <- mean(acc_pt$AdjEM)
+  
+  acc_tourn_final <- final %>%
+    filter(Conf == "ACC" & is.na(seed) == 0 & seed != "NULL")
+  
+  acc_tourn_pt <- pt %>%
+    filter(Conf == "ACC" & is.na(seed) == 0 & seed != "NULL")
+  
+  acc_eff_tourn_final <- mean(acc_tourn_final$AdjEM)
+  
+  acc_eff_tourn_pt <- mean(acc_tourn_pt$AdjEM)
+  
+  acc_diff <- acc_eff_final - acc_eff_pt
+  
+  acc_tourn_diff <- acc_eff_tourn_final - acc_eff_tourn_pt
+  
+  return(c(acc_diff, acc_tourn_diff))
+}
+
+acc_21 <- acc_calculator(final = final_21, pt = pt_21)
+acc_19 <- acc_calculator(final = final_19, pt = pt_19)
+acc_18 <- acc_calculator(final = final_18, pt = pt_18)
+acc_17 <- acc_calculator(final = final_17, pt = pt_17)
+acc_16 <- acc_calculator(final = final_16, pt = pt_16)
+acc_15 <- acc_calculator(final = final_15, pt = pt_15)
+acc_14 <- acc_calculator(final = final_14, pt = pt_14)
+acc_13 <- acc_calculator(final = final_13, pt = pt_13)
+acc_12 <- acc_calculator(final = final_12, pt = pt_12)
+acc_11 <- acc_calculator(final = final_11, pt = pt_11)
+acc_10 <- acc_calculator(final = final_10, pt = pt_10)
+
+acc_changes <- c(acc_10[1],
+                 acc_11[1],
+                 acc_12[1],
+                 acc_13[1],
+                 acc_14[1],
+                 acc_15[1],
+                 acc_16[1],
+                 acc_17[1],
+                 acc_18[1],
+                 acc_19[1],
+                 acc_21[1])
+
+acc_tourn_changes <- c(acc_10[2],
+                       acc_11[2],
+                       acc_12[2],
+                       acc_13[2],
+                       acc_14[2],
+                       acc_15[2],
+                       acc_16[2],
+                       acc_17[2],
+                       acc_18[2],
+                       acc_19[2],
+                       acc_21[2])
+bigeast_calculator <- function(final, pt){
+  
+  bigeast_final <- final %>%
+    filter(Conf == "Big East")
+  
+  bigeast_pt <- pt %>%
+    filter(Conf == "Big East")
+  
+  bigeast_eff_final <- mean(bigeast_final$AdjEM)
+  
+  bigeast_eff_pt <- mean(bigeast_pt$AdjEM)
+  
+  bigeast_tourn_final <- final %>%
+    filter(Conf == "Big East" & is.na(seed) == 0 & seed != "NULL")
+  
+  bigeast_tourn_pt <- pt %>%
+    filter(Conf == "Big East" & is.na(seed) == 0 & seed != "NULL")
+  
+  bigeast_eff_tourn_final <- mean(bigeast_tourn_final$AdjEM)
+  
+  bigeast_eff_tourn_pt <- mean(bigeast_tourn_pt$AdjEM)
+  
+  bigeast_diff <- bigeast_eff_final - bigeast_eff_pt
+  
+  bigeast_tourn_diff <- bigeast_eff_tourn_final - bigeast_eff_tourn_pt
+  
+  return(c(bigeast_diff, bigeast_tourn_diff))
+}
+
+bigeast_21 <- bigeast_calculator(final = final_21, pt = pt_21)
+bigeast_19 <- bigeast_calculator(final = final_19, pt = pt_19)
+bigeast_18 <- bigeast_calculator(final = final_18, pt = pt_18)
+bigeast_17 <- bigeast_calculator(final = final_17, pt = pt_17)
+bigeast_16 <- bigeast_calculator(final = final_16, pt = pt_16)
+bigeast_15 <- bigeast_calculator(final = final_15, pt = pt_15)
+bigeast_14 <- bigeast_calculator(final = final_14, pt = pt_14)
+bigeast_13 <- bigeast_calculator(final = final_13, pt = pt_13)
+bigeast_12 <- bigeast_calculator(final = final_12, pt = pt_12)
+bigeast_11 <- bigeast_calculator(final = final_11, pt = pt_11)
+bigeast_10 <- bigeast_calculator(final = final_10, pt = pt_10)
+
+bigeast_changes <- c(bigeast_10[1],
+                     bigeast_11[1],
+                     bigeast_12[1],
+                     bigeast_13[1],
+                     bigeast_14[1],
+                     bigeast_15[1],
+                     bigeast_16[1],
+                     bigeast_17[1],
+                     bigeast_18[1],
+                     bigeast_19[1],
+                     bigeast_21[1])
+
+bigeast_tourn_changes <- c(bigeast_10[2],
+                           bigeast_11[2],
+                           bigeast_12[2],
+                           bigeast_13[2],
+                           bigeast_14[2],
+                           bigeast_15[2],
+                           bigeast_16[2],
+                           bigeast_17[2],
+                           bigeast_18[2],
+                           bigeast_19[2],
+                           bigeast_21[2])
+
+sec_calculator <- function(final, pt){
+  
+  sec_final <- final %>%
+    filter(Conf == "SEC")
+  
+  sec_pt <- pt %>%
+    filter(Conf == "SEC")
+  
+  sec_eff_final <- mean(sec_final$AdjEM)
+  
+  sec_eff_pt <- mean(sec_pt$AdjEM)
+  
+  sec_tourn_final <- final %>%
+    filter(Conf == "SEC" & is.na(seed) == 0 & seed != "NULL")
+  
+  sec_tourn_pt <- pt %>%
+    filter(Conf == "SEC" & is.na(seed) == 0 & seed != "NULL")
+  
+  sec_eff_tourn_final <- mean(sec_tourn_final$AdjEM)
+  
+  sec_eff_tourn_pt <- mean(sec_tourn_pt$AdjEM)
+  
+  sec_diff <- sec_eff_final - sec_eff_pt
+  
+  sec_tourn_diff <- sec_eff_tourn_final - sec_eff_tourn_pt
+  
+  return(c(sec_diff, sec_tourn_diff))
+}
+
+sec_21 <- sec_calculator(final = final_21, pt = pt_21)
+sec_19 <- sec_calculator(final = final_19, pt = pt_19)
+sec_18 <- sec_calculator(final = final_18, pt = pt_18)
+sec_17 <- sec_calculator(final = final_17, pt = pt_17)
+sec_16 <- sec_calculator(final = final_16, pt = pt_16)
+sec_15 <- sec_calculator(final = final_15, pt = pt_15)
+sec_14 <- sec_calculator(final = final_14, pt = pt_14)
+sec_13 <- sec_calculator(final = final_13, pt = pt_13)
+sec_12 <- sec_calculator(final = final_12, pt = pt_12)
+sec_11 <- sec_calculator(final = final_11, pt = pt_11)
+sec_10 <- sec_calculator(final = final_10, pt = pt_10)
+
+sec_changes <- c(sec_10[1],
+                 sec_11[1],
+                 sec_12[1],
+                 sec_13[1],
+                 sec_14[1],
+                 sec_15[1],
+                 sec_16[1],
+                 sec_17[1],
+                 sec_18[1],
+                 sec_19[1],
+                 sec_21[1])
+
+sec_tourn_changes <- c(sec_10[2],
+                       sec_11[2],
+                       sec_12[2],
+                       sec_13[2],
+                       sec_14[2],
+                       sec_15[2],
+                       sec_16[2],
+                       sec_17[2],
+                       sec_18[2],
+                       sec_19[2],
+                       sec_21[2])
+
+big12_calculator <- function(final, pt){
+  
+  big12_final <- final %>%
+    filter(Conf == "Big 12")
+  
+  big12_pt <- pt %>%
+    filter(Conf == "Big 12")
+  
+  big12_eff_final <- mean(big12_final$AdjEM)
+  
+  big12_eff_pt <- mean(big12_pt$AdjEM)
+  
+  big12_tourn_final <- final %>%
+    filter(Conf == "Big 12" & is.na(seed) == 0 & seed != "NULL")
+  
+  big12_tourn_pt <- pt %>%
+    filter(Conf == "Big 12" & is.na(seed) == 0 & seed != "NULL")
+  
+  big12_eff_tourn_final <- mean(big12_tourn_final$AdjEM)
+  
+  big12_eff_tourn_pt <- mean(big12_tourn_pt$AdjEM)
+  
+  big12_diff <- big12_eff_final - big12_eff_pt
+  
+  big12_tourn_diff <- big12_eff_tourn_final - big12_eff_tourn_pt
+  
+  return(c(big12_diff, big12_tourn_diff))
+}
+
+big12_21 <- big12_calculator(final = final_21, pt = pt_21)
+big12_19 <- big12_calculator(final = final_19, pt = pt_19)
+big12_18 <- big12_calculator(final = final_18, pt = pt_18)
+big12_17 <- big12_calculator(final = final_17, pt = pt_17)
+big12_16 <- big12_calculator(final = final_16, pt = pt_16)
+big12_15 <- big12_calculator(final = final_15, pt = pt_15)
+big12_14 <- big12_calculator(final = final_14, pt = pt_14)
+big12_13 <- big12_calculator(final = final_13, pt = pt_13)
+big12_12 <- big12_calculator(final = final_12, pt = pt_12)
+big12_11 <- big12_calculator(final = final_11, pt = pt_11)
+big12_10 <- big12_calculator(final = final_10, pt = pt_10)
+
+big12_changes <- c(big12_10[1],
+                   big12_11[1],
+                   big12_12[1],
+                   big12_13[1],
+                   big12_14[1],
+                   big12_15[1],
+                   big12_16[1],
+                   big12_17[1],
+                   big12_18[1],
+                   big12_19[1],
+                   big12_21[1])
+
+big12_tourn_changes <- c(big12_10[2],
+                         big12_11[2],
+                         big12_12[2],
+                         big12_13[2],
+                         big12_14[2],
+                         big12_15[2],
+                         big12_16[2],
+                         big12_17[2],
+                         big12_18[2],
+                         big12_19[2],
+                         big12_21[2])
+
+all_changes <- c(big10_changes, big12_changes, acc_changes, sec_changes, pac12_changes, bigeast_changes)
+
+
+pac12_final <- final_21 %>%
+  filter(Conf == "Pac 12") %>%
+  arrange(TeamName)
+
+pac12_pt <- pt_21 %>%
+  filter(Conf == "Pac 12") %>%
+  arrange(TeamName)
+
+pac12_diffs <- pac12_final$AdjEM - pac12_pt$AdjEM
+
+names(pac12_diffs) <- pac12_final$TeamName
+
+pac12_diffs
+
+pac12_21_final <- mean(pac12_final$AdjEM)
+
+pac12_21_pt <- mean(pac12_pt$AdjEM)
+
+
+
+big10_final <- final_21 %>%
+  filter(Conf == "Big Ten") %>%
+  arrange(TeamName)
+
+big10_pt <- pt_21 %>%
+  filter(Conf == "Big Ten") %>%
+  arrange(TeamName)
+
+big10_21_final <- mean(big10_final$AdjEM)
+
+big10_21_pt <- mean(big10_pt$AdjEM)
+
+
+
+big12_final <- final_21 %>%
+  filter(Conf == "Big 12") %>%
+  arrange(TeamName)
+
+big12_pt <- pt_21 %>%
+  filter(Conf == "Big 12") %>%
+  arrange(TeamName)
+
+big12_21_final <- mean(big12_final$AdjEM)
+
+big12_21_pt <- mean(big12_pt$AdjEM)
+
+
+
+bigeast_final <- final_21 %>%
+  filter(Conf == "Big East") %>%
+  arrange(TeamName)
+
+bigeast_pt <- pt_21 %>%
+  filter(Conf == "Big East") %>%
+  arrange(TeamName)
+
+bigeast_21_final <- mean(bigeast_final$AdjEM)
+
+bigeast_21_pt <- mean(bigeast_pt$AdjEM)
+
+
+
+acc_final <- final_21 %>%
+  filter(Conf == "ACC") %>%
+  arrange(TeamName)
+
+acc_pt <- pt_21 %>%
+  filter(Conf == "ACC") %>%
+  arrange(TeamName)
+
+acc_21_final <- mean(acc_final$AdjEM)
+
+acc_21_pt <- mean(acc_pt$AdjEM)
+
+
+
+sec_final <- final_21 %>%
+  filter(Conf == "SEC") %>%
+  arrange(TeamName)
+
+sec_pt <- pt_21 %>%
+  filter(Conf == "SEC") %>%
+  arrange(TeamName)
+
+sec_21_final <- mean(sec_final$AdjEM)
+
+sec_21_pt <- mean(sec_pt$AdjEM)
+
+
+
+conf_rank_pt <- c(pac12_21_pt, big10_21_pt, big12_21_pt, acc_21_pt, sec_21_pt, bigeast_21_pt)
+
+names(conf_rank_pt) <- c("Pac-12", "Big 10", "Big 12", "ACC", "SEC", "Big East")
+
+
+conf_rank_final <- c(pac12_21_final, big10_21_final, big12_21_final, acc_21_final, sec_21_final, bigeast_21_final)
+
+names(conf_rank_final) <- c("Pac-12", "Big 10", "Big 12", "ACC", "SEC", "Big East")
+
+
+conf_rank_pt
+
+conf_rank_final
+
+
+conf <- names(conf_rank_final)
+
+ratings <- c(conf_rank_pt, conf_rank_final)
+
+vec <- c(replicate(n = 6, expr = "Pre"), replicate(n = 6, expr = "Post"))
+
+changes <- cbind.data.frame(c(conf, conf), vec, ratings)
+
+
+changes <- changes %>%
+  rename("Conference" = "c(conf, conf)",
+         "time" = "vec") %>%
+  mutate(paired = c(1:6, 1:6))
+
+
+bigten <- pt_21 %>%
+  filter(Conf == "Big Ten") %>%
+  select(TeamName, AdjOE, AdjDE, AdjEM, RankAdjEM) %>%
+  arrange(desc(AdjEM))
+
+pac12 <- cbind(final_21, pt_21$AdjEM, pt_21$RankAdjEM) %>%
+  rename("pre" = "pt_21$AdjEM",
+         "pre_Rank" = "pt_21$RankAdjEM",
+         "post" = "AdjEM",
+         "post_Rank" = "RankAdjEM") %>%
+  mutate(change = post - pre) %>%
+  arrange(desc(change)) %>%
+  mutate(change_Rank = 1:n()) %>%
+  filter(Conf == "Pac 12") %>%
+  select(TeamName, pre, pre_Rank, post, post_Rank, change, change_Rank) %>%
+  arrange(desc(change))
+
+t_21 <- cbind(final_21, pt_21$AdjEM, pt_21$RankAdjEM) %>%
+  rename("pre" = "pt_21$AdjEM",
+         "pre_Rank" = "pt_21$RankAdjEM",
+         "post" = "AdjEM",
+         "post_Rank" = "RankAdjEM") %>%
+  mutate(change = post - pre) %>%
+  arrange(desc(change))
+
+pt_19$TeamName[pt_19$TeamName == "N.C. State"] <- "North Carolina St."
+
+pt_19 <- pt_19 %>%
+  arrange(TeamName)
+
+t_19 <- cbind(final_19, pt_19$AdjEM) %>%
+  rename("pre" = "pt_19$AdjEM",
+         "post" = "AdjEM") %>%
+  mutate(change = post - pre) %>%
+  arrange(desc(change))
+
+t_18 <- cbind(final_18, pt_18$AdjEM) %>%
+  rename("pre" = "pt_18$AdjEM",
+         "post" = "AdjEM") %>%
+  mutate(change = post - pre) %>%
+  arrange(desc(change))
+
+t_17 <- cbind(final_17, pt_17$AdjEM) %>%
+  rename("pre" = "pt_17$AdjEM",
+         "post" = "AdjEM") %>%
+  mutate(change = post - pre) %>%
+  arrange(desc(change))
+
+t_16 <- cbind(final_16, pt_16$AdjEM) %>%
+  rename("pre" = "pt_16$AdjEM",
+         "post" = "AdjEM") %>%
+  mutate(change = post - pre) %>%
+  arrange(desc(change))
+
+t_15 <- cbind(final_15, pt_15$AdjEM) %>%
+  rename("pre" = "pt_15$AdjEM",
+         "post" = "AdjEM") %>%
+  mutate(change = post - pre) %>%
+  arrange(desc(change))
+
+t_14 <- cbind(final_14, pt_14$AdjEM) %>%
+  rename("pre" = "pt_14$AdjEM",
+         "post" = "AdjEM") %>%
+  mutate(change = post - pre) %>%
+  arrange(desc(change))
+
+t_13 <- cbind(final_13, pt_13$AdjEM) %>%
+  rename("pre" = "pt_13$AdjEM",
+         "post" = "AdjEM") %>%
+  mutate(change = post - pre) %>%
+  arrange(desc(change))
+
+t_12 <- cbind(final_12, pt_12$AdjEM) %>%
+  rename("pre" = "pt_12$AdjEM",
+         "post" = "AdjEM") %>%
+  mutate(change = post - pre) %>%
+  arrange(desc(change))
+
+t_11 <- cbind(final_11, pt_11$AdjEM) %>%
+  rename("pre" = "pt_11$AdjEM",
+         "post" = "AdjEM") %>%
+  mutate(change = post - pre) %>%
+  arrange(desc(change))
+
+t_10 <- cbind(final_10, pt_10$AdjEM) %>%
+  rename("pre" = "pt_10$AdjEM",
+         "post" = "AdjEM") %>%
+  mutate(change = post - pre) %>%
+  arrange(desc(change))
+```
+
+
+Let's wind the clocks back to March 14, 2021---an ordinary Sunday to most, but to any attentive college hoops fan, *Selection Sunday*. As far as conference strength goes, the Big Ten leads the way. With three teams in the AP top 5 (#3 Illinois, #4 Michigan, and #5 Iowa), another in the top 10 (#9 Ohio State), and yet another in the top 20 (#T20 Purdue), the Big Ten looks poised to dominate the top seed lines of the NCAA Tournament. No other conference placed more than one team in the top 5 (WCC with #1 Gonzaga and Big 12 with #2 Baylor), more than two teams in the top 10 (Big 12 with #2 Baylor and #10 West Virginia and SEC with #6 Alabama and #8 Arkansas), and only the Big 12 claimed more depth in the top 20 (six teams: #2 Baylor, #10 West Virginia, #11 Kansas, #12 Oklahoma State, #13 Texas, and #T20 Texas Tech). What's more, the Big Ten had five *other* teams place in the top 25 at one point or another over the course of the season. For those enthusiasts (like myself) who prefer modern-age analytics to the aggregate opinion of the dusty Associated Press, the numbers offer an even stronger endorsement: the Big Ten placed *six* teams in the top *13* of Ken Pomeroy's adjusted net efficiency ratings (hereafter "KenPom ratings"): #2 Michigan, #3 Illinois, #5 Iowa, #7 Ohio State, #10 Wisconsin, and #13 Purdue. Whereas the AP Poll seems to punish certain Big Ten schools (I'm looking at you, Wisconsin) for playing---and often losing---against the crème de la crème of the Big Ten, the KenPom ratings reward teams (like Wisconsin) for their daunting schedules. No other conference placed even *two* teams in the KenPom top 13, and only the Big East placed more than two in the KenPom top 20 (three teams: #12 Villanova, #16 Connecticut, and #19 Creighton). The Big 12 Conference---the Big Ten's closest competitor according to the AP Poll---placed only one team in the KenPom top 20 (#4 Baylor), with five more between 22 and 30 (#22 Kansas, #23 Texas Tech, #26 Texas, #27 West Virginia, and #30 Oklahoma State). According to the KenPom ratings, the battle for the NCAA's best basketball conference equates to a one-horse race, with Thoroughbred "Big Ten" crossing the finish line before his competitors even show up to the track.
+
+<br>
+
+```{css echo=FALSE}
+caption{
+  color: black;
+  font-size: 1.2em;
+  font-weight: bold;
+}
+```
+
+```{r echo=FALSE}
+bigten %>%
+  kable(format = "html",
+        caption = "2021 Big Ten Team KenPom Ratings: Pre-NCAA Tournament",
+        col.names = c("Team", "Adj. Off. Rating", "Adj. Def. Rating", "Adj. Net Rating", "Adj. Net Rank")) %>%
+  kable_styling("striped", font_size = 12) %>%
+  add_footnote(label = c("Ratings are denominated in points per 100 possessions (PPP).", "Rank spans all 357 current NCAA Division I men's basketball programs."), notation = "number")
+```
+
+<br>
+
+In fact, the KenPom ratings suggest that the 2021 Big Ten wins the battle for the best regular-season basketball conference over the last *decade*. With an average KenPom rating of +20.0 points per 100 possessions (PPP) across the 14 members, the only comparable challenger since 2010 is the 2017 Big 12 at +19.2 PPP. Returning to the 2021 regular season, the Big 12 ranked second in average KenPom rating across conference members at +15.0 PPP---just 75% of the Big Ten's average rating. In other words, on a neutral floor, we would expect the average Big Ten team to defeat the average Big 12 team by 5 points in a 100-possession game. For reference---with respect to the six high-major basketball conferences (ACC, Big 12, Big East, Big Ten, Pac-12, and SEC)---the *second-place* Big 12's average rating of +15.0 PPP exceeded the *last-place* Pac-12's average rating of +11.8 PPP by only 4.2 PPP.
+
+Okay, enough with the analytical jargon. Hypotheticals are fascinating, but some fans may want to know what *actually* happened during the 2021 season, which featured far fewer interconference matchups than usual due to the COVID-19 pandemic. Under normal circumstances, the Big Ten collectively plays about 55 interconference games against high-major opponents per season; that's an average of roughly four per team. In 2021, the Big Ten mustered just 27 such games (roughly two per team), thanks in large part to 16 ACC-Big Ten matchups. Against the ACC, the Big Ten recorded an impressive 10-6 record, with notable wins against eventual NCAA Tournament participants North Carolina, Syracuse, and Virginia Tech. Outside the ACC, the Big Ten recorded noteworthy interconference victories over UCLA, Butler, and (mid-major) Loyola Chicago. All in all, the Big Ten finished the regular season 15-12 against high-major interconference opponents---a respectable record, surely, but not the caliber one would expect from the best conference over the last decade. The 15-12 mark was, however, good enough to lead the six high-major conferences in terms of interconference winning percentage against high-major opponents (.556 hiW%). Moreover, college programs typically play interconference matchups at the beginning of the season---a time when many teams have yet to unmask their true identities.
+
+As ESPN analysts gradually revealed the 2021 NCAA Tournament bracket, the selection committee's affinity for Big Ten basketball grew evident. The Big Ten claimed an unprecedented *half* of all #1 and #2 seeds, with Big Ten tournament champion Illinois and Big Ten regular-season champion Michigan both awarded #1 seeds and Iowa and Ohio State both awarded #2 seeds. Further down the list, Purdue captured a #4 seed, Wisconsin captured a #9 seed, Maryland and Rutgers both captured #10 seeds, and Michigan State captured an #11 seed as one of the last four teams to make the field. At the end of the day, the Big Ten secured *nine* spots in the NCAA Tournament---two more than the next-most successful conferences (Big 12 and ACC with seven each). Since the selection committee's seeding formula incorporates competition-strength adjusted net efficiency (presumably quite similar to the KenPom ratings), we should view the Big Ten's attainment of nine tournament spots (tied for second most all-time) and four top-2 seeds (most all-time) as impressive yet unsurprising.
+
+Fast-forward to April 6, 2021---the day after Baylor defeated Gonzaga to claim championship glory for the first time in school history. While the Big Ten failed to capture its elusive first title since 2000, the king-of-kings conference still managed to put together an impressive NCAA Tournament résumé: 13-5 overall (.722 W%), 8-1 against high-major interconference opponents (.889 hiW%), one team to the Final Four, three teams to the Elite Eight (which could have been four had two conference rivals not met in the Sweet Sixteen), and interconference losses only at the hands of eventual runner-up Gonzaga (twice), Final Four participant Houston, and ACC powerhouse Florida State.
+
+If you watched much of the 2021 NCAA Tournament---or paid close attention to the bracket overview above---you know that *something* is amiss. Astonishingly, the résumé outlined above belongs to the lowly *Pac-12*, *not* the vaunted Big Ten. Paradoxically, the Big Ten's performance fell at the opposite end of the spectrum: 8-9 overall (.471 W%), 5-5 against high-major interconference opponents (.500 hiW%), zero teams to the Final Four, one team to the Elite Eight (Michigan), and one team to the Sweet Sixteen (Michigan). Throughout the tournament, the Big Ten saw two major first-round upsets (#15 Oral Roberts over #2 Ohio State and #13 North Texas over #4 Purdue), two significant second-round upsets (#7 Oregon over #2 Iowa and #8 Loyola Chicago over #1 Illinois), and one stunning upset in the Elite Eight (#11 UCLA over #1 Michigan). How could the supposed "best conference of the decade" perform so atrociously while the weakest conference of the year performed so well?
+
+One explanation relies on the format of the NCAA Tournament itself. Under the single-elimination bracket structure, the teams who advance the furthest are not *necessarily* the "best" teams, but the ones most apt to "survive and advance" through the trials and tribulations of the tournament. Just one unfortunate draw, poor schematic matchup, untimely injury, or even bounce of the ball can derail an elite team's entire season. Don't believe me? Just ask 2018 Virginia what an underdog with no fear and nothing to lose can do. After all, there's a reason that the NCAA Tournament is better known as *March Madness*. So can we blame madness, dumb luck, natural variation, random chance, or whatever else you want to call the *inexplicable* for the triumph of the Pac-12 and the tragedy of the Big Ten? Or was this perhaps a classic case of selection committee mishap, in which Big Ten teams were overseeded and Pac-12 teams were underseeded? Or was the Big Ten simply overrated altogether, while the Pac-12 was criminally underrated? Let's dive deeper into the numbers to know for sure.
+
+By itself, the NCAA Tournament represents too small a sample (just 67 games---less than one per team on average) to draw any significant conclusions from, which explains why it's generally foolish to label a team as overrated or underrated based on NCAA Tournament performance alone. However, postseason play holds substantial value when viewed as an interconference-rich *supplement* to the regular season, laden with matchups between elite programs. Therefore, we should focus on statistical *changes* between pre-NCAA Tournament play and post-NCAA Tournament play to better understand the surprises of the 2021 NCAA Tournament. Intuitively, when presented with new information, models will adapt to perform optimally. For instance, the model behind the KenPom ratings will adjust team efficiency estimates to optimally evaluate team performance when presented with new (postseason) games. With this in mind, let's look at the *change* in average KenPom rating for each conference before and after the 2021 NCAA Tournament:
+
+<br>
+
+```{r echo=FALSE, fig.width=8}
+ggplot(data = changes, aes(x = factor(time, levels = c("Pre", "Post"), labels = c("Pre-NCAA Tournament", "Post-NCAA Tournament")), y = ratings)) +
+  geom_point(aes(color = Conference), size = 5) +
+  geom_line(aes(group = paired, color = Conference), size = 1) +
+  ylab("Average KenPom Rating (PPP)") +
+  xlab("") +
+  ggtitle("2021 Conference KenPom Ratings:", subtitle = "Pre-NCAA Tournament vs. Post-NCAA Tournament") +
+  theme(axis.text.x = element_text(size = 11, color = "black"),
+        plot.title = element_text(size = 14, face = "bold", hjust = 0.5),
+        plot.subtitle = element_text(size = 12, face = "bold", hjust = 0.5)) +
+  scale_y_continuous(breaks = seq(11, 21, 1))
+```
+
+<br>
+
+Immediately, one line on the graph stands out: the Pac-12's average rating change of +4.4 PPP. Compared to the average high-major conference *absolute* change of 0.59 PPP (excluding the Pac-12), +4.4 PPP seems colossal. In fact, the next greatest change was that of the Big Ten at (negative) 1.2 PPP---a mere 27% of the magnitude of the Pac-12's average rating change. Have we seen such an extreme change in years past? Let's look at the last decade of average rating changes for the six high-major conferences to know for sure (data goes back to 2010 and skips 2019 due to the cancellation of the 2019 NCAA Tournament). The histogram below depicts the distribution of conference KenPom rating changes since 2010:
+
+<br>
+
+```{r echo=FALSE, fig.width=8}
+hist(x = all_changes,
+     breaks = 25,
+     xlim = c(-2, 5),
+     ylim = c(0, 12),
+     xlab = "Average KenPom Rating Change (PPP)",
+     ylab = "Frequency (#)",
+     main = "Conference KenPom Rating Changes (2010-2021)",
+     col = "dark grey")
+```
+
+<br>
+
+Ignoring the 2021 Pac-12 outlier, the distribution appears relatively normal with a center around zero and a standard deviation around 0.8. This makes sense: Pre-NCAA Tournament conference ratings reflect roughly 30-game samples for each school averaged across all conference members, so they should serve as reasonably accurate estimates for each conference's true average rating. However, with the addition of postseason games, these ratings may experience slight changes simply due to chance. Under the normality assumption, let's take the sample mean as the true mean and the sample standard deviation as the true standard deviation. By the empirical rule, we expect 95% of all observations to fall within the interval from -1.5 to 1.5. Within our sample, 65 of the 66 changes (98%) fall within this interval. The lone nonconformist? The 2021 Pac-12.
+
+Let's advance past rudimentary analysis. Given 66 observations, what's the probability that at least one change equals or exceeds the magnitude of the 2021 Pac-12's average rating change (4.4 PPP)? Under our reasonable set of assumptions (normal population, true mean equals zero, true standard deviation equals sample standard deviation, independence of observations, etc.), the probability that 66 observations fall within the interval from -4.4 to 4.4 is a whopping 0.999998, or *99.9998%*. Therefore, the probability that *at least one* observation falls outside this interval is a minuscule 0.000002, or *0.0002%*.
+
+So how much confidence do we have in our underlying assumptions? Particularly, how certain are we that the data comes from a normal population with a central tendency of zero and an even, bell-shaped spread? As briefly discussed above, the normality of the population makes theoretical sense. Since team ratings are each based on roughly 30 games of data prior to NCAA Tournament play, they should approximate each team's true rating quite well. However, adding one or more games to the existing data may cause minor fluctuations in team ratings due to natural variation in performance. Furthermore, since conference ratings represent arithmetic means of team ratings, they, too, may exhibit minor fluctuations, with the commonality of change inversely proportional to the magnitude of change.
+
+In reality, do we observe evidence of normality? According to the empirical rule, normal populations exhibit the following pattern: ~68% of values lie within one standard deviation of the mean, ~95% of values lie within two standard deviations of the mean, and ~99.7% of values lie within three standard deviations of the mean. Let's remove the 2021 Pac-12 observation---which we've established as an outlier---and recalculate the sample mean and sample standard deviation. Per these new estimates (sample mean of -0.06 and sample standard deviation of 0.6), 69% of observations lie within one standard deviation of the mean, 95% of observations lie within two standard deviations of the mean, and 100% of observations lie within three standard deviations of the mean---*strikingly* close to the empirical approximations. Combined with the sample's remarkably normal appearance (see histogram above), the normality assumption proves compelling.
+
+How about the expectation of zero? With a sample mean (whether 0.004 with the outlier or -0.06 without) so close to zero, any reasonable confidence interval for the true mean will contain zero. While we cannot conclude that the true mean equals zero from any confidence interval alone (as this would equate to the invalid *acceptance* of a null hypothesis), the considerable alignment of theory with reality engenders belief in the true mean of zero.
+
+Perhaps the most important piece of the puzzle remains the true standard deviation. After all, the spread of the data primarily determines the probability of extreme values. Intuitively, the outlying nature of the 2021 Pac-12 observation likely pulls the sample standard deviation above the true standard deviation. As discussed above, the sample accords with the empirical rule to an exceptional degree when we remove the outlier, which causes the sample standard deviation to fall from 0.8 to 0.6. Therefore, we should have appreciable confidence in the probability estimates using the 0.8 estimate because it likely exceeds the true standard deviation, which makes extreme values more probable.
+
+Let's take our hypothetical analysis one step further: If we construct a 99% confidence interval for the true standard deviation, we obtain an upper bound of 1.0, which likely represents an extreme estimate under the influence of the 2021 Pac-12 outlier. Let's use this upper bound as a robusticity test for the outlier's probability. Undertaking the same procedure as before, the probability that 66 observations fall within the interval from -4.4 to 4.4 is still 0.999, or *99.9%*. Therefore, the probability that *at least one* observation falls outside this interval is 0.001, or *0.1%* (*one-tenth* of one percent). Even in this worst-case scenario, the chance of observing such an extreme rating change remains *incredibly* unlikely.
+
+Let's quickly analyze the average rating change of the 2021 Big Ten. With a relatively large drop of -1.2 PPP, the conference certainly suffered the ramifications of poor postseason play. While the probability of observing a change as or more extreme than ±1.2 (given the sample mean of 0.004 and sample standard deviation of 0.8) is only 0.134, or 13.4%, for any given observation, the probability of observing at least one of such changes in 66 observations is 0.9999, or 99.99%. In fact, the sample contains two other observations (*not* including the 2021 Pac-12 outlier) as or more extreme than the 2021 Big Ten. Thus, while changes of such magnitude are uncommon (only 6% of all observations in the sample), we should expect to see at least one in a sample of 66 observations.
+
+As of now, we've established the considerable improbability of the 2021 Pac-12's average rating change via statistical analysis. So who are the culprits behind the Pac-12's heist of the spotlight? Ironically, the answer lies with the *entire* Pac-12; all 12 members experienced a rating change of at least +3.4 PPP---even those who did not participate in the NCAA Tournament. How is this possible? With the marked success of the five Pac-12 teams who *did* play in the NCAA Tournament, the schedules of the remaining Pac-12 members retrospectively increased in difficulty, which boosted their ratings due to the competition-strength adjustment built into the KenPom model. In fact, the Pac-12 placed all *12* of its members in the top *14* of team KenPom rating changes before and after the NCAA Tournament (only Baylor and Oral Roberts broke up the Pac-12 improvement party). Several Pac-12 teams experienced *particularly* large ratings bumps, and it's not by coincidence that these teams had the most success in March Madness: UCLA, who had a magical run to the Final Four as a play-in #11 seed, received a +6.5 PPP boost, which vaulted the Bruins from #44 to #13 in the final KenPom ratings. Their March Madness journey included victories over #11-seed Michigan State, #6-seed BYU, #14-seed Abilene Christian, #2-seed Alabama, and #1-seed Michigan before their eventual loss to #1-seed Gonzaga. Oregon State, who had an equally improbable run to the Elite Eight as a #12 seed, received a +6.2 PPP boost, which vaulted the Beavers from #85 to #43 in the final KenPom ratings. Their March Madness journey included victories over #5-seed Tennessee, #4-seed Oklahoma State, and #8-seed Loyola Chicago before their eventual loss to #2-seed Houston. USC, who also had an impressive run to the Elite Eight, received a +5.4 PPP boost, which vaulted the Trojans from #14 to #6 in the final KenPom ratings. Their March Madness journey included victories over #11-seed Drake, #3-seed Kansas, and #7-seed Oregon (another Pac-12 stalwart who received a +4.2 PPP boost with a victory over #2-seed Iowa) before their eventual loss to #1-seed Gonzaga. These four schools (Oregon included) combined to go 11-3 against interconference opponents, *7-0* against high-major interconference opponents, and only recorded losses against eventual Final Four teams. Add in Colorado, the last of the Pac-12 tournament teams, and the "Conference of Champions" went *undefeated* against every other high-major conference except the ACC, whom the Pac-12 only played once (0-1). Against the supposed top three conferences by average KenPom rating prior to the NCAA Tournament---the Big Ten, Big 12, and SEC---the Pac-12 went 3-0, 2-0, and 2-0, respectively.
+
+<br>
+
+```{r echo=FALSE}
+pac12 %>%
+  kable(format = "html",
+        caption = "2021 Pac-12 Team KenPom Ratings: Pre-NCAA Tournament vs. Post-NCAA Tournament",
+        col.names = c("Team", "Pre-Tournament Adj. Net Rating", "Pre-Tournament Adj. Net Rank", "Post-Tournament Adj. Net Rating", "Post-Tournament Adj. Net Rank", "Adj. Net Rating Change", "Adj. Net Rating Change Rank")) %>%
+  kable_styling("striped", font_size = 12) %>%
+  add_footnote(label = c("Ratings are denominated in points per 100 possessions (PPP).", "Ranks span all 357 current NCAA Division I men's basketball programs.", "Unsurprisingly, the 2021 NCAA Division I men's basketball season featured the three largest team KenPom rating changes since 2010 (UCLA, Oregon St., and USC)."), notation = "number")
+```
+
+<br>
+
+Let's circle back to our original question: What force looms behind the success of the Pac-12 and the failure of the Big Ten? In most cases, when a team or conference performs unexpectedly in the NCAA Tournament, we can blame the natural variation inherent within small sample sizes. With respect to the 2021 Big Ten, since we have seen three average rating changes of equal or greater magnitude in the last decade, we can largely (but maybe not *entirely*) blame dumb luck. With respect to the 2021 Pac-12, however, the massive improbability (0.1% *at best*) of a rating change so great in magnitude suggests that factors beyond randomness are at play.
+
+If we can't point to random variation as the preeminent source of the 2021 Pac-12's success, how can we explain it? The short answer: the Pac-12 was *massively* underrated prior to the NCAA Tournament by advanced analytics and media personalities alike. Both the numbers and the "experts" who talk about them (with varying degrees of accuracy) fell so hard for the "conference of the decade" Big Ten that the bottom-of-the-barrel Pac-12 flew under the radar. As an aside, allow me to hop off my own pedestal by admitting that I fully bought into the Big Ten hype as well, with little more than pity saved for the feeble Pac-12. Come tournament time, like so many others, the Pac-12 proved me *dead wrong*. Okay, fair enough. Humans are vulnerable creatures, easily influenced by their environment and ridden with innate biases. So how did the 2021 Pac-12 fool the *numbers*? More on this soon enough. For now, suffice it to say that the Pac-12's extraordinary average rating change proves that the "Conference of Champions" was more than just lucky---it was *ridiculously* underrated.
+
+As noted above, Big Ten members can largely blame chance for their disastrous tournament performances. However, the conference was also probably overrated to *some* degree. After the NCAA Tournament, the Big Ten's average rating fell to +18.8 PPP---still first among all conferences (post-tournament) in 2021, but second in the last decade to the 2017 Big 12 (+19.7 PPP), with numerous challengers close behind. While second place since 2010 remains quite impressive, the "best conference of the decade" claims fall short, especially given postseason performance. Hence, one could legitimately argue that the Big Ten was slightly overrated---if only due to incredibly high expectations.
+
+Okay, so many of us incorrectly evaluated the Pac-12 and Big Ten. Does this mean that the selection committee incorrectly seeded these teams? Surprisingly, no. In hindsight, it's easy to say that almost every Big Ten team (save for Michigan) should have received worse seeds. After all, if we take away Michigan, the Big Ten's #1 and #2 seeds combined for a measly two wins. However, this retrospective evaluation misses the point of seeding, which centers on rewarding teams for their performance *up to that point*. And up to that point, the Big Ten had played at an elite level, backed by both the proverbial "eye test" and the analytics. The Pac-12, on the other hand, had played at an inferior level. With the fewest games played against high-major interconference opponents---and a subpar 4-8 record to show for it---most spectators came away with the (ultimately untrue) impression that the Pac-12 remained a step behind the other high-major conferences and carried that belief with them throughout the season. Likewise, with only 12 games of valuable interconference information available to gauge the relative strength of the Pac-12 on, many advanced rating systems made the same mistake. The selection committee can only work with the information that they have at their disposal, so the fact that they gave so many top seeds to the *up-to-that-point* dominant Big Ten and lower seeds to the *up-to-that-point* lackluster Pac-12 should upset nobody.
+
+Now that we've addressed the *if*, let's address the *why*. Why were evaluators---human and machine alike---so wrong about the Pac-12? Believe it or not, we've briefly discussed the answer several times already. As the age-old statistics adage goes, "A model is only as good as its underlying data." With respect to the 2021 college basketball season, the lack of interconference play---especially between high-major opponents---significantly inhibited the proper evaluation of many teams. Since rating models (like that behind the KenPom ratings) involve competition-strength adjustment, each team's rating depends on the team's opponents' ratings, which depend on each opponent's opponents' ratings, and so on. While the mathematical nuances behind these models are complex, the implications are clear: When it comes to data, more is better, but more *heterogeneous* is also better. As it relates to college basketball, game data lacks a certain degree of heterogeneity because each team plays the majority of its games within its own respective conference. As an extreme example, imagine if teams exclusively played conference matchups. We could easily rate each team within its own conference, but how do we know how the conferences stack up against one another? Just because the leader of conference A has the same rating as the leader of conference B doesn't mean the teams are of equivalent quality. Perhaps conference A has far superior players than conference B, which might mean that conference A's lowest rated team (say, -10 PPP) would actually defeat conference B's highest-rated team (say, +10 PPP) by 50 PPP on average. We would never know (or even speculate) this from the ratings alone. Thus, every interconference game between high-major opponents provides crucial information about the relative strength of each conference.
+
+Normally, each college basketball season features roughly 150 regular-season interconference games between high-major opponents. As noted above, the Big Ten tends to play around 55 per year (~4 per team), while the Pac-12 tends to play around 35 per year (~3 per team). In the COVID-plagued 2021 season, the Pac-12 managed just 12 such games (~34% of their usual number), while the Big Ten managed 27 (~49% of their usual number). In total, the six high-major conferences met in 70 regular-season games, roughly 47% of the usual number. The 2021 NCAA Tournament, which featured 21 interconference games between high-major opponents, held increased importance in terms of interconference evaluation because it comprised 23% of the entire sample of high-major interconference matchups compared to about 12% in a typical year. The effects were especially pronounced for the Pac-12, which saw nearly as many high-major interconference opponents in the regular season (12, record of 4-8) as the postseason (9, record of 8-1). Overall, the Pac-12 went 12-9 against high-major interconference opponents---best across the six high-major conferences in terms of hiW%. Understandably, rating models viewed the Pac-12's relative strength much differently before the NCAA Tournament---when they held a high-major worst .333 hiW%---compared to after the NCAA Tournament---when they held a high-major best .571 hiW%. Without question, the lack of interconference play precipitated the improvident pre-tournament evaluations of the Pac-12 and helps to explain the improbability of the Pac-12's unparalleled average rating change of +4.4 PPP.
+
+The incomparable case of the 2021 Pac-12 calls to mind two fundamentals of statistical analysis: 1) When it comes to extrapolation from samples to populations, always pay attention to sample size; and 2) When it comes to modeling, always pay attention to the heterogeneity of the underlying data. Oftentimes, these fundamentals go hand-in-hand; as we collect more data, we naturally obtain greater heterogeneity. However, rare occasions exist wherein robust sample sizes---such as the ~4,220 college basketball games of the 2021 regular season---might not yield the expected heterogeneity of such samples---like when the schedule only features 47% of the usual 150 high-major interconference matchups. In such situations, we must lower our degree of confidence in model projections relative to typical situations. Most analysts (including myself) fell victim to the improper assumption that the impressive sample size of the 2021 regular season guaranteed sufficient heterogeneity to draw conclusions about the conferences with the same degree of confidence as usual. In reality, we should have demonstrated hesitance toward such conclusions due to the significant lack of heterogeneity relative to the typical season. Remember, a model is *only* as good as its underlying data.
+
+<br>
+
+Special thanks to Ken Pomeroy ([KenPom.com](https://KenPom.com/)) and [*Sports Reference*](https://www.sports-reference.com/cbb/).

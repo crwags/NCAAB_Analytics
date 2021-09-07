@@ -1,1 +1,1 @@
-# NCAAB Analytics## Game ControlComputation and adjustment of game control scores.
+# NCAAB Analytics## Game ControlComputation and adjustment of game control scores.## Madness AnalyticsR code used to generate Madness Analytics articles.
